@@ -92,7 +92,7 @@ int main(int argc, char* argv[])
                 );
     }
 
-    GetCalcOrder((unsigned int*)calc_order_vector);
+    GetCalcOrder((int*)calc_order_vector);
 
     /* initialize the random number generator */
     srand((unsigned)time(NULL));
@@ -108,7 +108,7 @@ int main(int argc, char* argv[])
     /* test the matrix with the Jacobi algorithm */
     gettimeofday(&tvStart, &tzp); 
     result = JacobiBC((double *)solution_vector,
-              (unsigned int*)calc_order_vector, MATRIX_DIM+2, 
+              (int*)calc_order_vector, MATRIX_DIM+2, 
               g_myConfig.max_iteration, 
               g_myConfig.max_element_value, 
               g_myConfig.tolerance);
