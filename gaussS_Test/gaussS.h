@@ -20,19 +20,6 @@ int Jacobi(double *a,
                                  const double max_element_val,
                                  const double tolerance);
 
-int JacobiC(
-                                 double * x, 
-                                 const unsigned int matrix_size,
-                                 const unsigned int max_iterations,
-                                 const double max_element_val,
-                                 const double tolerance);
-int JacobiR(
-                                 double * x, 
-                                 const unsigned int matrix_size,
-                                 const unsigned int max_iterations,
-                                 const double max_element_val,
-                                 const double tolerance);
-
 int JacobiBC(
                                  double * x, 
                                  int * o,

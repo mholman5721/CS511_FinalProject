@@ -1,22 +1,24 @@
 #############################################################################
 ## Makefile                                                                ##
 ##                                                                         ##
-## Makefile for compiling on Linux/Unix systems using gcc/cc               ##
+## Makefile for compiling using g++                                        ##
 ##                                                                         ##
 ##    11/26/04 WQ -- Makefile created                                      ##
+##    12/04/19 WQ -- Makefile updated                                      ##
 #############################################################################
-PRJT   = jacobiBC
-SRCT   = jacobi.c jacobiBC.c
-INCL   = jacobi.h const.h
+PRJT   = jacobiBC_Test
+NAME   = testJacobi
+SRCT   = jacobiBC.c jacobiBC_Test.c
+INCL   = jacobiBC.h const.h
 OBJT   = $(SRCT:%.c=%.o)
 
-CC     = cc
-CFLAGS = -O2
-LFLAGS = -lm
+CC     = g++
+CFLAGS = -O3
+#LFLAGS = -lm
 
 # the default target
 $(PRJT) : $(OBJT)
-	$(CC) $(LFLAGS) -o $(PRJT) $(OBJT)
+	$(CC) $(CFLAGS) -o $(NAME) $(OBJT)
 
 %.o : %.c $(INCL)
 	$(CC) -c $(CFLAGS) -o $@ $<

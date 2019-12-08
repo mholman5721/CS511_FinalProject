@@ -1,0 +1,7 @@
+{
+    "files.associations": {
+        "stdlib.h": "c",
+        "cmath": "c",
+        "jacobi.h": "c"
+    }
+}
