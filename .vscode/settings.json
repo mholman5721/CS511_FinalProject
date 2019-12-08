@@ -1,6 +1,7 @@
 {
     "files.associations": {
         "stdlib.h": "c",
-        "cmath": "c"
+        "cmath": "c",
+        "jacobi.h": "c"
     }
 }

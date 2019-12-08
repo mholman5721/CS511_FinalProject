@@ -7,7 +7,7 @@
  *    11/26/04 WQ -- file created                                           *
  ****************************************************************************/
 
-#include "jacobiBC.h"
+#include "gaussS.h"
 #include "const.h"
 
 #include <stdio.h> //for printf

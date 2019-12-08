@@ -6,9 +6,9 @@
 ##    11/26/04 WQ -- Makefile created                                      ##
 ##    12/04/19 WQ -- Makefile updated                                      ##
 #############################################################################
-PRJT   = jacobiGS_Test
-NAME   = testGaussS
-SRCT   = jacobi.c jacobiGS_Test.c
+PRJT   = jacobi_Test
+NAME   = testJacobi
+SRCT   = jacobi.c jacobi_Test.c
 INCL   = jacobi.h const.h
 OBJT   = $(SRCT:%.c=%.o)
 

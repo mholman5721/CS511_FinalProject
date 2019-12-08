@@ -20,13 +20,5 @@ int Jacobi(double *a,
                                  const double max_element_val,
                                  const double tolerance);
 
-int JacobiBC(
-                                 double * x, 
-                                 int * o,
-                                 const unsigned int matrix_size,
-                                 const unsigned int max_iterations,
-                                 const double max_element_val,
-                                 const double tolerance);
-
 #endif /* __JACOBI_H_11262004__ */
 

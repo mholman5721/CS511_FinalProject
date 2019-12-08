@@ -6,10 +6,10 @@
 ##    11/26/04 WQ -- Makefile created                                      ##
 ##    12/04/19 WQ -- Makefile updated                                      ##
 #############################################################################
-PRJT   = jacobiBC_Test
-NAME   = testJacobi
-SRCT   = jacobiBC.c jacobiBC_Test.c
-INCL   = jacobiBC.h const.h
+PRJT   = gaussS_Test
+NAME   = testGaussS
+SRCT   = gaussS.c gaussS_Test.c
+INCL   = gaussS.h const.h
 OBJT   = $(SRCT:%.c=%.o)
 
 CC     = g++
