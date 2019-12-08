@@ -42,9 +42,10 @@ int MATRIX_DEBUG;
 const char* g_csFileConfig = "config.ini";
 
 boolean GetConfig();
-void MakeInitialMatrix(double x[MATRIX_DIM+2][MATRIX_DIM+2]);
-void PrintSolution(double x[MATRIX_DIM+2][MATRIX_DIM+2]);
-void GetCalcOrder(int o[MATRIX_DIM*MATRIX_DIM]);
+void MakeInitialMatrix_a(double a[MATRIX_DIM][MATRIX_DIM], double val);
+void MakeInitialMatrix_b(double b[MATRIX_DIM], double val);
+void MakeInitialMatrix_x(double x[MATRIX_DIM], double val);
+void PrintSolution(double x[MATRIX_DIM]);
 int  GetTimeDiff(struct timeval tvStart, struct timeval tvEnd) {
     if (tvStart.tv_usec > tvEnd.tv_usec) {
         tvEnd.tv_usec += 1000000;
@@ -56,9 +57,10 @@ int  GetTimeDiff(struct timeval tvStart, struct timeval tvEnd) {
 
 int main(int argc, char* argv[])
 {
-    double solution_vector[MATRIX_DIM+2][MATRIX_DIM+2];
-    unsigned int calc_order_vector[MATRIX_DIM][MATRIX_DIM];
-    unsigned int jacobi_convergences = 0, jacobi_iterations = 0;
+    double a[MATRIX_DIM][MATRIX_DIM];
+    double x[MATRIX_DIM];
+    double b[MATRIX_DIM];
+
     unsigned int result;
 
     struct timeval tvStart, tvEnd;
@@ -92,8 +94,6 @@ int main(int argc, char* argv[])
                 );
     }
 
-    GetCalcOrder((int*)calc_order_vector);
-
     /* initialize the random number generator */
     srand((unsigned)time(NULL));
 
@@ -103,26 +103,30 @@ int main(int argc, char* argv[])
     g_myConfig.left = 10;
 
     /* initialize matrix, set up boundary condition */
-    MakeInitialMatrix(solution_vector);
+    MakeInitialMatrix_a(a, 2.0);
+    MakeInitialMatrix_b(b, 2.0);
+    MakeInitialMatrix_x(x, 1.0);
 
     /* test the matrix with the Jacobi algorithm */
     gettimeofday(&tvStart, &tzp); 
-    result = JacobiBC((double *)solution_vector,
-              (int*)calc_order_vector, MATRIX_DIM+2, 
+    result = gaussS((double *)a,
+              (double *)b,
+              (double *)x,
+              MATRIX_DIM, 
               g_myConfig.max_iteration, 
               g_myConfig.max_element_value, 
               g_myConfig.tolerance);
     gettimeofday(&tvEnd, &tzp); 
     n_uSecLapsedJ = GetTimeDiff(tvStart, tvEnd);
     if ( MATRIX_DEBUG > 0 ) {
-        printf("Jacobi Solution: \n");
-        PrintSolution(solution_vector);
+        printf("Gauss Seidel Solution: \n");
+        PrintSolution(x);
     }
 
     /* display the results */
     if ( MATRIX_DEBUG >= 0 ) {
         printf("Results:\n");
-        printf("JacobiBC: Iterations=%d Time Cost=%d\n",
+        printf("Gauss Seidel: Iterations=%d Time Cost=%d\n",
             result, n_uSecLapsedJ);
     }
 
@@ -162,90 +166,64 @@ boolean GetConfig()
     return TRUE;
 }
 
-void MakeInitialMatrix(double x[MATRIX_DIM+2][MATRIX_DIM+2])
+void MakeInitialMatrix_a(double a[MATRIX_DIM][MATRIX_DIM], double val)
 {
-    unsigned int i, j;
-    unsigned int modelDimension;
-    modelDimension = MATRIX_DIM + 2;
     if ( MATRIX_DEBUG > 0 ) 
-        printf("\nPrint matrix x[][]\n");
+        printf("\nPrint matrix a[][]\n");
 
-    g_myConfig.right = 10;
-    for (i=0; i<modelDimension; i++) {
-        x[0][i] = g_myConfig.up;	
-        x[modelDimension-1][i] = g_myConfig.down;	
-        x[i][0] = g_myConfig.left;	
-        x[i][modelDimension-1] = g_myConfig.right;	
-    }
-    for (i=1; i<modelDimension-1; i++)
-        for (j=1; j<modelDimension-1; j++)
-                x[i][j] = 1.0;
+    for (int i = 0; i < MATRIX_DIM; i++)
+        for (int j = 0; j < MATRIX_DIM; j++)
+                a[i][j] = val;
 
     if ( MATRIX_DEBUG > 0 ) {
-        for (i=0; i<modelDimension; i++) {
-            for (j=0; j<modelDimension; j++)
-            if ( i==0 || i==(modelDimension-1)
-                || j==0 || j==(modelDimension-1))
-                printf("%.2f\t", x[i][j]);
-            else
-                printf("%.3f\t", x[i][j]);
+        for (int i = 0; i < MATRIX_DIM; i++) {
+            for (int j = 0; j < MATRIX_DIM; j++) {
+                printf("%.2f\t", a[i][j]);
+                
+            }
             printf("\n");
         }
     }
 }
 
-void PrintSolution(double x[MATRIX_DIM+2][MATRIX_DIM+2])
+void MakeInitialMatrix_b(double b[MATRIX_DIM], double val)
 {
-    if ( MATRIX_DEBUG < 0 ) return;
-    unsigned int i, j;
-    unsigned int modelDimension;
-    modelDimension = MATRIX_DIM+2;
+    if ( MATRIX_DEBUG > 0 ) 
+        printf("\nPrint matrix b[]\n");
 
-    for (i=0; i<modelDimension; i++)
-    {
-        for (j=0; j<modelDimension; j++) {
-            if ( i==0 || i==(modelDimension-1)
-                || j==0 || j==(modelDimension-1))
-                printf("%.2f\t", x[i][j]);
-            else
-                printf("%.3f\t", x[i][j]);
+    for (int i = 0; i < MATRIX_DIM; i++)
+        b[i] = val;
+
+    if ( MATRIX_DEBUG > 0 ) {
+        for (int i = 0; i < MATRIX_DIM; i++) {
+            printf("%.2f\t", b[i]);
         }
         printf("\n");
     }
 }
-void GetCalcOrder(int o[MATRIX_DIM*MATRIX_DIM])
+
+void MakeInitialMatrix_x(double x[MATRIX_DIM], double val)
 {
-    int i, radius;
-    int ki, kj;
-    int modelDim;
-    int m, low, high;
-    modelDim = MATRIX_DIM;
-
-    radius = (modelDim + 1) / 2; 
-    i = 0;
-    for ( m = 0; m < radius; m++ ) 
-    {
-        for (ki = 0; ki < modelDim; ki++) 
-            for ( kj=0; kj < modelDim; kj++)
-            {
-                low = m;
-                high = modelDim - 1 - m;
-                if(((ki==low || ki==high) && (kj >= low && kj <= high)) 
-                || ((kj==low || kj==high) && (ki >= low && ki <= high))  
-                  ) 
-                {
-                    o[i] = ki*modelDim+kj;
-                    o[i] += ki * 2 + modelDim + 2 + 1;
-                    i++;
-                }
-            }
-    } 
-
     if ( MATRIX_DEBUG > 0 ) 
-    {
-        printf("\nCalcOrder{");
-        for (i=0; i<MATRIX_DIM*MATRIX_DIM; i++)
-            printf("%d,", o[i]);
-        printf("}\n");
+        printf("\nPrint matrix x[]\n");
+
+    for (int i = 0; i < MATRIX_DIM; i++)
+        x[i] = val;
+
+    if ( MATRIX_DEBUG > 0 ) {
+        for (int i = 0; i < MATRIX_DIM; i++) {
+            printf("%.2f\t", x[i]);
+        }
+        printf("\n");
     }
+}
+
+void PrintSolution(double x[MATRIX_DIM])
+{
+    if ( MATRIX_DEBUG < 0 ) return;
+
+    for (int i = 0; i<MATRIX_DIM; i++){
+        printf("%.3f\t", x[i]);
+    }
+    printf("\n");
 }

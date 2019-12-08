@@ -11,18 +11,10 @@
 
 #include "const.h"
 
-/* solves a system of linear equations using Jacobi iteration */
-int Jacobi(double *a,
+/* solves a system of linear equations using Gauss Seidel iteration */
+int gaussS(double *a,
                                  double * b,
                                  double * x, 
-                                 const unsigned int matrix_size,
-                                 const unsigned int max_iterations,
-                                 const double max_element_val,
-                                 const double tolerance);
-
-int JacobiBC(
-                                 double * x, 
-                                 int * o,
                                  const unsigned int matrix_size,
                                  const unsigned int max_iterations,
                                  const double max_element_val,
