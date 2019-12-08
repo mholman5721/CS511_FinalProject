@@ -27,10 +27,6 @@ struct Config
     double max_element_value;
     unsigned int max_testing;
     
-    double up;
-    double down;
-    double right;
-    double left;
 } g_myConfig;
 
 /*
@@ -96,11 +92,6 @@ int main(int argc, char* argv[])
 
     /* initialize the random number generator */
     srand((unsigned)time(NULL));
-
-    g_myConfig.up = 10;
-    g_myConfig.down = 10;
-    g_myConfig.right = 10;
-    g_myConfig.left = 10;
 
     /* initialize matrix, set up boundary condition */
     MakeInitialMatrix_a(a, 2.0);

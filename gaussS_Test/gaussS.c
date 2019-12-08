@@ -45,15 +45,6 @@ int gaussS(double * a,
     if ( matrix_size == 0 || tolerance <= 0 || max_iterations == 0 )
         return 0; /* invalid inputs */ 
 
-    /* create a dynamic temp array */
-    double * last_x;
-    last_x = (double * )malloc(matrix_size * sizeof(double));
-
-    /* initialize the last iteration matrix (x[n-1]) */
-    for (i=0; i<matrix_size; i++)
-        last_x[i] = 1.0; /* use 1 instead of 0 to avoid multiplying
-                                    by 0 */
-
     /* calculate iterations */
     done = FALSE;
     bOverflow = FALSE;
@@ -66,17 +57,17 @@ int gaussS(double * a,
             for (j=0; j<matrix_size; j++)
             {
                 if (j != i)
-                    sigma += a[i*matrix_size+j] * last_x[j];
+                    sigma += a[i*matrix_size+j] * x[j];
             }
             x[i] = (b[i] - sigma) / a[i*matrix_size+i];
         }
 
         /* determine if we're done */
         error = 0;
-        for (i=0; i<matrix_size; i++)
-        {
-            if ( fabs(x[i] - last_x[i])/fabs(x[i]) > error ) 
-                error = fabs(x[i] - last_x[i])/fabs(x[i]);
+        for (i=0; i<matrix_size; i++){
+            for(j=0; j<matrix_size;j++){
+                error += a[i*matrix_size+j] * x[j] - b[j];
+            }
         }
 
         /* increment the iteration counter */
@@ -99,12 +90,7 @@ int gaussS(double * a,
         {
             done = TRUE;
         }
-
-        /* copy next_iteration to last_iteration */
-        (void)memcpy(last_x, x, sizeof(double) * matrix_size);
     } while (!done);
-
-    free(last_x);
   
     if ( bOverflow ) 
         iteration = -iteration;
