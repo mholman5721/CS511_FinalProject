@@ -4,12 +4,12 @@
 ## Makefile for compiling using g++                                        ##
 ##                                                                         ##
 ##    11/26/04 WQ -- Makefile created                                      ##
-##    12/04/19 WQ -- Makefile updated                                      ##
+##    12/09/19 WQ -- Makefile updated                                      ##
 #############################################################################
-PRJT   = jacobiBC_Test
-NAME   = testJacobiBC
-SRCT   = jacobiBC.c jacobiBC_Test.c
-INCL   = jacobiBC.h const.h
+PRJT   = gaussSBC_Test
+NAME   = testGaussSBC
+SRCT   = gaussSBC.c gaussSBC_Test.c
+INCL   = gaussSBC.h const.h
 OBJT   = $(SRCT:%.c=%.o)
 
 CC     = g++
