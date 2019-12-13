@@ -25,7 +25,10 @@ int GaussSBC(
     double error = 0.0;
     int nModelDim;
     int nthreads;
-    int iteration = 0;
+    int iteration[NUM_THREADS];
+    for(int i = 0; i < NUM_THREADS; i++){
+        iteration[i] = 0;
+    }
     boolean done, bOverflow;
     
     nModelDim = matrix_size-2;
@@ -109,14 +112,14 @@ int GaussSBC(
             {
                 error += errVal;
                 /* increment the iteration counter */
-                iteration++;
+                iteration[ID]++;
 
                 /* copy next_iteration to last_iteration */
                 memcpy(last_x, x, sizeof(double) * matrix_size *  matrix_size);
             }
             
             /* we are done if the iteration count exceeds the maximum number of iterations or the calculation converge */
-            if (iteration > max_iterations || errVal < tolerance || bOverflow) {
+            if (iteration[ID] > max_iterations || errVal < tolerance || bOverflow) {
                 done = TRUE;
             }
         } while (!done);
@@ -125,10 +128,14 @@ int GaussSBC(
     free(last_x);
   
     if ( bOverflow ) 
-        iteration = -iteration;
+        iteration[0] = -iteration[0];
 
     printf("nthreads: %d\n", nthreads);
 
     /* success if iteration between 0 and max_iterations*/
-    return iteration;
+    int totalIterations = 0;
+    for(int i = 0; i < NUM_THREADS; i++){
+        totalIterations += iteration[i];
+    }
+    return totalIterations;
 }//GaussSBC
