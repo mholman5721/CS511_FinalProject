@@ -106,7 +106,11 @@ int GaussSBC(
             }
             #pragma omp critical
             {
-                error += errVal;
+                /* update error value over all threads */
+                //if(errVal > error){
+                //    error = errVal;
+                //}
+                
                 /* increment the iteration counter */
                 iteration++;
 
