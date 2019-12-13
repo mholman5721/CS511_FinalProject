@@ -85,8 +85,11 @@ int GaussSBC(
 
                 /* if any entry is greater than ELEMENT_MAX, consider it an overflow and abort */
                 if ((x[i] >= max_element_val) || (x[i] <= -max_element_val)){
-                    printf("OVERFLOW! %lf\n", x[i]);
-                    bOverflow = TRUE;
+                    #pragma omp critical
+                    {
+                        printf("OVERFLOW! %lf\n", x[i]);
+                        bOverflow = TRUE;
+                    }
                     //break;
                 }
 
@@ -107,20 +110,22 @@ int GaussSBC(
             #pragma omp critical
             {
                 /* update error value over all threads */
-                //if(errVal > error){
-                //    error = errVal;
-                //}
+                if(errVal > error){
+                    error = errVal;
+                } else {
+                    error = 0;
+                }
                 
                 /* increment the iteration counter */
                 iteration++;
 
                 /* copy next_iteration to last_iteration */
                 memcpy(last_x, x, sizeof(double) * matrix_size *  matrix_size);
-            }
-            
-            /* we are done if the iteration count exceeds the maximum number of iterations or the calculation converge */
-            if (iteration > max_iterations || errVal < tolerance || bOverflow) {
-                done = TRUE;
+
+                /* we are done if the iteration count exceeds the maximum number of iterations or the calculation converge */
+                if (iteration > max_iterations || error < tolerance || bOverflow) {
+                    done = TRUE;
+                }
             }
             //printf("Thread: %d\n", ID);
         } while (!done);
