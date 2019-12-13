@@ -50,56 +50,54 @@ int GaussSBC(
     /* next ring ...  4 * ( nModelDim - 2 - 1)     */
     /* until nModelDim - 2*i == 2 or 1(inner most) */
     /* update last_x[i] when ring level is changed */
-    do 
+    #pragma omp parallel num_threads(NUM_THREADS) 
     {
+        double errVal = 0.0;
+        int m, i;
+        int nRingCnt = 0;
+        int nRingLevel = 0;
+        int ID = omp_get_thread_num();
+        int nthrds = omp_get_num_threads();
+        if(ID == 0) nthreads = nthrds;
 
-        int nOA_size = nModelDim  * nModelDim;
-
-        /* determine if we're done */
-        error = 0;
-
-        #pragma omp parallel num_threads(NUM_THREADS) 
+        do 
         {
-            double errVal = 0.0;
-            int m, i;
-            int nRingCnt = 0;
-            int nRingLevel = 0;
-            int ID = omp_get_thread_num();
-            int nthrds = omp_get_num_threads();
-            if(ID == 0) nthreads = nthrds;
+
+            int nOA_size = nModelDim  * nModelDim;
+
+            /* determine if we're done */
+            errVal = 0;
 
             /* initialize */
             nRingLevel = nModelDim; 
             nRingCnt = 0;
 
             #pragma omp for schedule(auto)
-            for (m=0; m<nOA_size; m++)
-            {
+            for (m=0; m<nOA_size; m++){
                 /* get next one from calc order vector */
                 i = o[m];
-                x[i] = 0.25 * ( x[i-1] + x[i+1]
-                    + x[i-matrix_size] + x[i+matrix_size]);
+                x[i] = 0.25 * (x[i-1] + x[i+1] + x[i-matrix_size] + x[i+matrix_size]);
 
                 nRingCnt++;
 
                 /* determine error before overwrite last_x */
-                if ( fabs(x[i] - last_x[i])/fabs(x[i]) > error ) {
-                    errVal += fabs(x[i] - last_x[i])/fabs(x[i]);
+                if ( fabs(x[i] - last_x[i])/fabs(x[i]) > errVal ) {
+                    errVal = fabs(x[i] - last_x[i])/fabs(x[i]);
                 }
 
                 /* if any entry is greater than ELEMENT_MAX, consider it an overflow and abort */
-                if ((x[i] >= max_element_val) || (x[i] <= -max_element_val))
-                {
+                if ((x[i] >= max_element_val) || (x[i] <= -max_element_val)){
                     printf("OVERFLOW! %lf\n", x[i]);
                     bOverflow = TRUE;
                     //break;
                 }
 
-                if ( nRingCnt == 4 * (nRingLevel - 1) ) 
-                { 
-                    /* update last_x */ 
-                    memcpy(last_x, x, sizeof(double) * matrix_size *  matrix_size);
-                    
+                if ( nRingCnt == 4 * (nRingLevel - 1) ) { 
+                    #pragma omp critical
+                    {
+                        /* update last_x */ 
+                        memcpy(last_x, x, sizeof(double) * matrix_size *  matrix_size);
+                    }   
                     /* reset nRingCnt to zero */
                     nRingCnt = 0;
 
@@ -110,23 +108,19 @@ int GaussSBC(
             #pragma omp critical
             {
                 error += errVal;
+                /* increment the iteration counter */
+                iteration++;
+
+                /* copy next_iteration to last_iteration */
+                memcpy(last_x, x, sizeof(double) * matrix_size *  matrix_size);
             }
-            errVal = 0;
-        }
-        /* increment the iteration counter */
-        iteration++;
-
-        /* we are done if the iteration count exceeds the maximum number of iterations or the calculation converge */
-        if ( iteration > max_iterations 
-          || error < tolerance
-          || bOverflow) 
-        {
-            done = TRUE;
-        }
-
-        /* copy next_iteration to last_iteration */
-    	memcpy(last_x, x, sizeof(double) * matrix_size *  matrix_size);
-    } while (!done);
+            
+            /* we are done if the iteration count exceeds the maximum number of iterations or the calculation converge */
+            if (iteration > max_iterations || errVal < tolerance || bOverflow) {
+                done = TRUE;
+            }
+        } while (!done);
+    }
 
     free(last_x);
   
