@@ -7,7 +7,7 @@
  *    11/26/04 WQ -- file created                                           *
  ****************************************************************************/
 
-#include "jacobi.h"
+#include "gaussSBC.h"
 #include "const.h"
 
 #include <stdio.h> //for printf
@@ -107,7 +107,7 @@ int main(int argc, char* argv[])
 
     /* test the matrix with the Jacobi algorithm */
     gettimeofday(&tvStart, &tzp); 
-    result = JacobiBC((double *)solution_vector,
+    result = GaussSBC((double *)solution_vector,
               (int*)calc_order_vector, MATRIX_DIM+2, 
               g_myConfig.max_iteration, 
               g_myConfig.max_element_value, 
@@ -115,14 +115,14 @@ int main(int argc, char* argv[])
     gettimeofday(&tvEnd, &tzp); 
     n_uSecLapsedJ = GetTimeDiff(tvStart, tvEnd);
     if ( MATRIX_DEBUG > 0 ) {
-        printf("Jacobi Solution: \n");
+        printf("Gauss Seidel Solution: \n");
         PrintSolution(solution_vector);
     }
 
     /* display the results */
     if ( MATRIX_DEBUG >= 0 ) {
         printf("Results:\n");
-        printf("JacobiBC: Iterations=%d Time Cost=%d\n",
+        printf("GaussSBC: Iterations=%d Time Cost=%d\n",
             result, n_uSecLapsedJ);
     }
 

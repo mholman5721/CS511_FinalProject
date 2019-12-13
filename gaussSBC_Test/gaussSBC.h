@@ -11,10 +11,9 @@
 
 #include "const.h"
 
-/* solves a system of linear equations using Jacobi iteration */
-int Jacobi(double *a,
-                                 double * b,
+int GaussSBC(
                                  double * x, 
+                                 int * o,
                                  const unsigned int matrix_size,
                                  const unsigned int max_iterations,
                                  const double max_element_val,
