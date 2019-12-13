@@ -25,10 +25,7 @@ int GaussSBC(
     double error = 0.0;
     int nModelDim;
     int nthreads;
-    int iteration[NUM_THREADS];
-    for(int i = 0; i < NUM_THREADS; i++){
-        iteration[i] = 0;
-    }
+    int iteration;
     boolean done, bOverflow;
     
     nModelDim = matrix_size-2;
@@ -65,7 +62,6 @@ int GaussSBC(
 
         do 
         {
-
             int nOA_size = nModelDim  * nModelDim;
 
             /* determine if we're done */
@@ -75,8 +71,7 @@ int GaussSBC(
             nRingLevel = nModelDim; 
             nRingCnt = 0;
 
-            #pragma omp for schedule(auto)
-            for (m=0; m<nOA_size; m++){
+            for (m=ID; m < nOA_size; m = m + nthrds){
                 /* get next one from calc order vector */
                 i = o[m];
                 x[i] = 0.25 * (x[i-1] + x[i+1] + x[i-matrix_size] + x[i+matrix_size]);
@@ -99,43 +94,41 @@ int GaussSBC(
                     #pragma omp critical
                     {
                         /* update last_x */ 
-                        memcpy(last_x, x, sizeof(double) * matrix_size *  matrix_size);
-                    }   
-                    /* reset nRingCnt to zero */
-                    nRingCnt = 0;
+                        memcpy(last_x, x, sizeof(double) * matrix_size *  matrix_size); 
 
-                    /* go to next level */
-                    nRingLevel = nRingLevel - 2;
+                        /* reset nRingCnt to zero */
+                        nRingCnt = 0;
+
+                        /* go to next level */
+                        nRingLevel = nRingLevel - 2;
+                    }
                 }
             }
             #pragma omp critical
             {
                 error += errVal;
                 /* increment the iteration counter */
-                iteration[ID]++;
+                iteration++;
 
                 /* copy next_iteration to last_iteration */
                 memcpy(last_x, x, sizeof(double) * matrix_size *  matrix_size);
             }
             
             /* we are done if the iteration count exceeds the maximum number of iterations or the calculation converge */
-            if (iteration[ID] > max_iterations || errVal < tolerance || bOverflow) {
+            if (iteration > max_iterations || errVal < tolerance || bOverflow) {
                 done = TRUE;
             }
+            //printf("Thread: %d\n", ID);
         } while (!done);
     }
 
     free(last_x);
-  
-    if ( bOverflow ) 
-        iteration[0] = -iteration[0];
 
     printf("nthreads: %d\n", nthreads);
 
     /* success if iteration between 0 and max_iterations*/
-    int totalIterations = 0;
-    for(int i = 0; i < NUM_THREADS; i++){
-        totalIterations += iteration[i];
-    }
-    return totalIterations;
+    if ( bOverflow ) 
+        iteration = -iteration;
+        
+    return iteration;
 }//GaussSBC
