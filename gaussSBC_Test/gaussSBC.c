@@ -22,12 +22,12 @@ int GaussSBC(
                                  const double max_element_val,
                                  const double tolerance)
 {
+    double error = 0.0;
+    int nModelDim;
     int nthreads;
     int iteration = 0;
-    unsigned int i, j;
-    double error;
-    boolean   done, bOverflow;
-    int nModelDim, nRingLevel, nRingCnt;
+    boolean done, bOverflow;
+    
     nModelDim = matrix_size-2;
 
     /* verify inputs */
@@ -52,22 +52,25 @@ int GaussSBC(
     /* update last_x[i] when ring level is changed */
     do 
     {
-        /* initialize */
-        nRingLevel = nModelDim; 
-        nRingCnt = 0;
-
-        /* calculate the next iteration */
-        int m;
-        /* determine if we're done */
-        error = 0;
 
         int nOA_size = nModelDim  * nModelDim;
 
+        /* determine if we're done */
+        error = 0;
+
         #pragma omp parallel num_threads(NUM_THREADS) 
         {
+            double errVal = 0.0;
+            int m, i;
+            int nRingCnt = 0;
+            int nRingLevel = 0;
             int ID = omp_get_thread_num();
             int nthrds = omp_get_num_threads();
             if(ID == 0) nthreads = nthrds;
+
+            /* initialize */
+            nRingLevel = nModelDim; 
+            nRingCnt = 0;
 
             #pragma omp for schedule(auto)
             for (m=0; m<nOA_size; m++)
@@ -78,19 +81,16 @@ int GaussSBC(
                     + x[i-matrix_size] + x[i+matrix_size]);
 
                 nRingCnt++;
-                //printf("%d--%d  ", nRingLevel, i);
 
                 /* determine error before overwrite last_x */
                 if ( fabs(x[i] - last_x[i])/fabs(x[i]) > error ) {
-                    error += fabs(x[i] - last_x[i])/fabs(x[i]);
-                    //printf("%.5f %0.5f--", x[m], last_x[m]);
+                    errVal += fabs(x[i] - last_x[i])/fabs(x[i]);
                 }
-                //printf("++%.3f ", x[i]);
 
-                /* if any entry is greater than ELEMENT_MAX, consider it an overflow
-                and abort */
+                /* if any entry is greater than ELEMENT_MAX, consider it an overflow and abort */
                 if ((x[i] >= max_element_val) || (x[i] <= -max_element_val))
                 {
+                    printf("OVERFLOW! %lf\n", x[i]);
                     bOverflow = TRUE;
                     //break;
                 }
@@ -105,15 +105,18 @@ int GaussSBC(
 
                     /* go to next level */
                     nRingLevel = nRingLevel - 2;
-                    //printf("\n");
                 }
             }
+            #pragma omp critical
+            {
+                error += errVal;
+            }
+            errVal = 0;
         }
         /* increment the iteration counter */
         iteration++;
 
-        /* we are done if the iteration count exceeds the maximum number of iterations
-           or the calculation converge */
+        /* we are done if the iteration count exceeds the maximum number of iterations or the calculation converge */
         if ( iteration > max_iterations 
           || error < tolerance
           || bOverflow) 
@@ -134,4 +137,4 @@ int GaussSBC(
 
     /* success if iteration between 0 and max_iterations*/
     return iteration;
-}//JacobiBC
+}//GaussSBC
