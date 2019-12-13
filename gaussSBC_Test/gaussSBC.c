@@ -11,6 +11,7 @@
 #include <string.h> /* for memcpy */
 #include <stdio.h>
 #include <stdlib.h>
+#include <omp.h>
 
 /* update x after calculation on each ring, calculated from outside to center */
 int GaussSBC(
@@ -21,6 +22,7 @@ int GaussSBC(
                                  const double max_element_val,
                                  const double tolerance)
 {
+    int nthreads;
     int iteration = 0;
     unsigned int i, j;
     double error;
@@ -60,45 +62,53 @@ int GaussSBC(
         error = 0;
 
         int nOA_size = nModelDim  * nModelDim;
-        for (m=0; m<nOA_size; m++)
+
+        #pragma omp parallel num_threads(NUM_THREADS) 
         {
-            /* get next one from calc order vector */
-            i = o[m];
-            x[i] = 0.25 * ( x[i-1] + x[i+1]
-                + x[i-matrix_size] + x[i+matrix_size]);
+            int ID = omp_get_thread_num();
+            int nthrds = omp_get_num_threads();
+            if(ID == 0) nthreads = nthrds;
 
-            nRingCnt++;
-            //printf("%d--%d  ", nRingLevel, i);
-
-            /* determine error before overwrite last_x */
-            if ( fabs(x[i] - last_x[i])/fabs(x[i]) > error ) {
-                error = fabs(x[i] - last_x[i])/fabs(x[i]);
-                //printf("%.5f %0.5f--", x[m], last_x[m]);
-            }
-            //printf("++%.3f ", x[i]);
-
-            /* if any entry is greater than ELEMENT_MAX, consider it an overflow
-               and abort */
-            if ((x[i] >= max_element_val) || (x[i] <= -max_element_val))
+            #pragma omp for schedule(auto)
+            for (m=0; m<nOA_size; m++)
             {
-                bOverflow = TRUE;
-                break;
-            }
+                /* get next one from calc order vector */
+                i = o[m];
+                x[i] = 0.25 * ( x[i-1] + x[i+1]
+                    + x[i-matrix_size] + x[i+matrix_size]);
 
-            if ( nRingCnt == 4 * (nRingLevel - 1) ) 
-            { 
-                /* update last_x */ 
-    		memcpy(last_x, x, sizeof(double) * matrix_size *  matrix_size);
-                
-                /* reset nRingCnt to zero */
-                nRingCnt = 0;
+                nRingCnt++;
+                //printf("%d--%d  ", nRingLevel, i);
 
-                /* go to next level */
-                nRingLevel = nRingLevel - 2;
-                //printf("\n");
+                /* determine error before overwrite last_x */
+                if ( fabs(x[i] - last_x[i])/fabs(x[i]) > error ) {
+                    error += fabs(x[i] - last_x[i])/fabs(x[i]);
+                    //printf("%.5f %0.5f--", x[m], last_x[m]);
+                }
+                //printf("++%.3f ", x[i]);
+
+                /* if any entry is greater than ELEMENT_MAX, consider it an overflow
+                and abort */
+                if ((x[i] >= max_element_val) || (x[i] <= -max_element_val))
+                {
+                    bOverflow = TRUE;
+                    //break;
+                }
+
+                if ( nRingCnt == 4 * (nRingLevel - 1) ) 
+                { 
+                    /* update last_x */ 
+                    memcpy(last_x, x, sizeof(double) * matrix_size *  matrix_size);
+                    
+                    /* reset nRingCnt to zero */
+                    nRingCnt = 0;
+
+                    /* go to next level */
+                    nRingLevel = nRingLevel - 2;
+                    //printf("\n");
+                }
             }
         }
-
         /* increment the iteration counter */
         iteration++;
 
@@ -119,6 +129,8 @@ int GaussSBC(
   
     if ( bOverflow ) 
         iteration = -iteration;
+
+    printf("nthreads: %d\n", nthreads);
 
     /* success if iteration between 0 and max_iterations*/
     return iteration;

@@ -13,7 +13,7 @@ INCL   = gaussSBC.h const.h
 OBJT   = $(SRCT:%.c=%.o)
 
 CC     = g++
-CFLAGS = -O3
+CFLAGS = -O3 -fopenmp
 #LFLAGS = -lm
 
 # the default target
