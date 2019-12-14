@@ -53,6 +53,7 @@ int GaussSBC(
     #pragma omp parallel num_threads(NUM_THREADS) 
     {
         double errVal = 0.0;
+        double calcVal = 0.0;
         int m, i;
         int nRingCnt = 0;
         int nRingLevel = 0;
@@ -74,28 +75,29 @@ int GaussSBC(
             for (m=ID; m < nOA_size; m = m + nthrds){
                 /* get next one from calc order vector */
                 i = o[m];
-                x[i] = 0.25 * (x[i-1] + x[i+1] + x[i-matrix_size] + x[i+matrix_size]);
+                calcVal = 0.25 * (x[i-1] + x[i+1] + x[i-matrix_size] + x[i+matrix_size]);
 
                 nRingCnt++;
 
                 /* determine error before overwrite last_x */
-                if ( fabs(x[i] - last_x[i])/fabs(x[i]) > errVal ) {
-                    errVal = fabs(x[i] - last_x[i])/fabs(x[i]);
+                if ( fabs(calcVal - last_x[i])/fabs(calcVal) > errVal ) {
+                    errVal = fabs(calcVal - last_x[i])/fabs(calcVal);
                 }
 
                 /* if any entry is greater than ELEMENT_MAX, consider it an overflow and abort */
-                if ((x[i] >= max_element_val) || (x[i] <= -max_element_val)){
+                if ((calcVal >= max_element_val) || (calcVal <= -max_element_val)){
                     #pragma omp critical
                     {
-                        printf("OVERFLOW! %lf\n", x[i]);
+                        printf("OVERFLOW! %lf\n", calcVal);
                         bOverflow = TRUE;
                     }
                     //break;
                 }
-
-                if ( nRingCnt == 4 * (nRingLevel - 1) ) { 
-                    #pragma omp critical
-                    {
+                #pragma omp critical
+                {
+                    x[i] = calcVal;
+                    
+                    if ( nRingCnt == 4 * (nRingLevel - 1) ) { 
                         /* update last_x */ 
                         memcpy(last_x, x, sizeof(double) * matrix_size *  matrix_size); 
 
