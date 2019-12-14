@@ -71,6 +71,13 @@ int GaussSBC(
         /* initialize the last iteration matrix */
         (void)memcpy(calc_x, x, sizeof(double) * matrix_size_2);
 
+        /* create a dynamic temp array */
+        double * calcLast_x;
+        calcLast_x = (double * )malloc(sizeof(double) * matrix_size_2);
+
+        /* initialize the last iteration matrix */
+        (void)memcpy(calcLast_x, x, sizeof(double) * matrix_size_2);
+
         do 
         {
             /* determine if we're done */
@@ -83,13 +90,13 @@ int GaussSBC(
             for (m=ID; m < nOA_size; m = m + nthrds){
                 /* get next one from calc order vector */
                 i = o[m];
-                calc_x[i] = 0.25 * (x[i-1] + x[i+1] + x[i-matrix_size] + x[i+matrix_size]);
+                calc_x[i] = 0.25 * (calc_x[i-1] + calc_x[i+1] + calc_x[i-matrix_size] + calc_x[i+matrix_size]);
 
                 nRingCnt++;
 
                 /* determine error before overwrite last_x */
-                if ( fabs(calc_x[i] - last_x[i])/fabs(calc_x[i]) > errVal[ID] ) {
-                    errVal[ID] = fabs(calc_x[i] - last_x[i])/fabs(calc_x[i]);
+                if ( fabs(calc_x[i] - calcLast_x[i])/fabs(calc_x[i]) > errVal[ID] ) {
+                    errVal[ID] = fabs(calc_x[i] - calcLast_x[i])/fabs(calc_x[i]);
                 }
 
                 /* if any entry is greater than ELEMENT_MAX, consider it an overflow and abort */
@@ -99,7 +106,7 @@ int GaussSBC(
                         printf("OVERFLOW! %lf\n", calc_x[i]);
                         bOverflow = TRUE;
                     }
-                    //break;
+                    break;
                 }
 
                 if ( (nRingCnt * NUM_THREADS) == 4 * (nRingLevel - 1) ) { 
@@ -107,15 +114,21 @@ int GaussSBC(
                     {   
                         /* update calc_x */ 
                         for(int n = 0; n < matrix_size_2; n++){
-                            if(calc_x[n] > x[n]) {
+                            if(x[n] < calc_x[n]) {
                                 x[n] = calc_x[n];
                             }
                         }
 
-                        /* update last_x */ 
-                        //memcpy(last_x, x, sizeof(double) * matrix_size_2); 
+                        /* update calcLast_x */ 
                         for(int n = 0; n < matrix_size_2; n++){
-                            if(x[n] > last_x[n]) {
+                            if(calcLast_x[n] < x[n]) {
+                                calcLast_x[n] = x[n];
+                            }
+                        }
+
+                        /* update last_x */ 
+                        for(int n = 0; n < matrix_size_2; n++){
+                            if(last_x[n] < x[n]) {
                                 last_x[n] = x[n];
                             }
                         }
@@ -136,14 +149,21 @@ int GaussSBC(
 
                 /* update calc_x */ 
                 for(int n = 0; n < matrix_size_2; n++){
-                    if(calc_x[n] > x[n]) {
+                    if(x[n] < calc_x[n]) {
                         x[n] = calc_x[n];
                     }
                 }
 
-                /* copy next_iteration to last_iteration */
+                /* update calcLast_x */ 
                 for(int n = 0; n < matrix_size_2; n++){
-                    if(x[n] > last_x[n]) {
+                    if(calcLast_x[n] < x[n]) {
+                        calcLast_x[n] = x[n];
+                    }
+                }
+
+                /* update last_x */ 
+                for(int n = 0; n < matrix_size_2; n++){
+                    if(last_x[n] < x[n]) {
                         last_x[n] = x[n];
                     }
                 }
