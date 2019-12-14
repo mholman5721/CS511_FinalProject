@@ -27,6 +27,8 @@ int GaussSBC(
     int matrix_size_2 = matrix_size * matrix_size;
     int nthreads;
     int iteration;
+    boolean done[NUM_THREADS];
+    boolean allDone = FALSE;
 
     /* verify inputs */
     if ( matrix_size == 0 || tolerance <= 0 || max_iterations == 0 )
@@ -46,7 +48,7 @@ int GaussSBC(
     /* update last_x[i] when ring level is changed */
     #pragma omp parallel num_threads(NUM_THREADS) 
     {
-        boolean done, bOverflow; 
+        boolean bOverflow; 
         double errVal = 0.0;
         int m, i;
         int nRingCnt = 0;
@@ -56,8 +58,12 @@ int GaussSBC(
         int nOA_size = nModelDim  * nModelDim;
         if(ID == 0) nthreads = nthrds;
 
+        for(int b = 0; b < NUM_THREADS; b++){
+            done[b] = FALSE;
+        }
+
         /* calculate iterations */
-        done = FALSE;
+        //done = FALSE;
         bOverflow = FALSE;
 
         /* create a dynamic temp array */
@@ -70,7 +76,7 @@ int GaussSBC(
         do 
         {
             /* determine if we're done */
-            errVal = 0;
+            //errVal = 0;
 
             /* initialize */
             nRingLevel = nModelDim; 
@@ -79,7 +85,7 @@ int GaussSBC(
             for (m=ID; m < nOA_size; m = m + nthrds){
                 /* get next one from calc order vector */
                 i = o[m];
-                calc_x[i] = 0.25 * (x[i-1] + x[i+1] + x[i-matrix_size] + x[i+matrix_size]);
+                calc_x[i] = 0.25 * (calc_x[i-1] + calc_x[i+1] + calc_x[i-matrix_size] + calc_x[i+matrix_size]);
 
                 nRingCnt++;
 
@@ -95,22 +101,21 @@ int GaussSBC(
                         printf("OVERFLOW! %lf\n", calc_x[i]);
                         bOverflow = TRUE;
                     }
-                    //break;
+                    break;
                 }
 
                 if ( (nRingCnt * NUM_THREADS) == 4 * (nRingLevel - 1) ) { 
                     #pragma omp critical
                     {   
-                        /* update calc_x */ 
+                        /* update x */ 
                         for(int n = 0; n < matrix_size_2; n++){
-                            if(calc_x[n] > x[n]) {
+                            if(calc_x[n] != x[n]) {
                                 x[n] = calc_x[n];
                             }
                         }
 
                         /* update last_x */ 
-                        //memcpy(last_x, x, sizeof(double) * matrix_size_2); 
-                        for(int n = 0; n < matrix_size_2; n++){
+                        for(int n = 0; n != matrix_size_2; n++){
                             if(x[n] > last_x[n]) {
                                 last_x[n] = x[n];
                             }
@@ -130,35 +135,49 @@ int GaussSBC(
                 /* increment the iteration counter */
                 iteration++;
 
-                /* update calc_x */ 
+                /* update x */ 
                 for(int n = 0; n < matrix_size_2; n++){
-                    if(calc_x[n] > x[n]) {
+                    if(calc_x[n] != x[n]) {
                         x[n] = calc_x[n];
                     }
                 }
 
                 /* copy next_iteration to last_iteration */
                 for(int n = 0; n < matrix_size_2; n++){
-                    if(x[n] > last_x[n]) {
+                    if(x[n] != last_x[n]) {
                         last_x[n] = x[n];
                     }
                 }
 
                 /* we are done if the iteration count exceeds the maximum number of iterations or the calculation converge */
                 if (iteration > max_iterations){ 
-                    printf("ITERATIONS: %d / %d\n", iteration, max_iterations);
-                    done = TRUE;
+                    printf("ITERATIONS [ %d ]: %d / %d\n", ID, iteration, max_iterations);
+                    done[ID] = TRUE;
                 } else if (bOverflow) {
-                    printf("OVERFLOW: TRUE\n");
+                    printf("OVERFLOW [ %d ]: TRUE\n", ID);
                     iteration = -iteration;
-                    done = TRUE;
+                    done[ID] = TRUE;
                 } else if (errVal < tolerance){
-                    printf("ERROR: %lf / %lf\n", errVal, tolerance);
-                    done = TRUE;
+                    printf("ERROR [ %d ]: %lf / %lf\n", ID, errVal, tolerance);
+                    done[ID] = TRUE;
+                }
+
+                /* check if all done */
+                int doneCount = 0;
+                for(int n = 0; n < NUM_THREADS; n++){
+                    if(done[n] == FALSE){
+                        doneCount = 0;
+                        break;
+                    } else {
+                        doneCount++;
+                    }
+                }
+                if(doneCount == NUM_THREADS){
+                    allDone = TRUE;
                 }
             }
             //printf("Thread: %d\n", ID);
-        } while (!done);
+        } while (!allDone);
     }
 
     free(last_x);
