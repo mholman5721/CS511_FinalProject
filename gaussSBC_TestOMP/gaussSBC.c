@@ -78,6 +78,8 @@ int GaussSBC(
         /* initialize the last iteration matrix */
         (void)memcpy(calcLast_x, x, sizeof(double) * matrix_size_2);
 
+        int chunkSize = nOA_size / NUM_THREADS;
+
         do 
         {
             /* determine if we're done */
@@ -87,7 +89,8 @@ int GaussSBC(
             nRingLevel = nModelDim; 
             nRingCnt = 0;
 
-            for (m=ID; m < nOA_size; m = m + nthrds){
+            for (m = ID; m < nOA_size; m = m + nthrds){
+            //for (m = (ID * chunkSize); m < (ID * chunkSize) + chunkSize; m++){
                 /* get next one from calc order vector */
                 i = o[m];
                 calc_x[i] = 0.25 * (calc_x[i-1] + calc_x[i+1] + calc_x[i-matrix_size] + calc_x[i+matrix_size]);
@@ -106,7 +109,7 @@ int GaussSBC(
                         printf("OVERFLOW! %lf\n", calc_x[i]);
                         bOverflow = TRUE;
                     }
-                    break;
+                    //break;
                 }
 
                 if ( (nRingCnt * NUM_THREADS) == 4 * (nRingLevel - 1) ) { 
