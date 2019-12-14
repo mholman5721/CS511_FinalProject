@@ -23,12 +23,10 @@ int GaussSBC(
                                  const double tolerance)
 {
     double error = 0.0;
-    int nModelDim;
+    int nModelDim = matrix_size-2;
+    int matrix_size_2 = matrix_size * matrix_size;
     int nthreads;
     int iteration;
-    boolean done, bOverflow;
-    
-    nModelDim = matrix_size-2;
 
     /* verify inputs */
     if ( matrix_size == 0 || tolerance <= 0 || max_iterations == 0 )
@@ -36,14 +34,10 @@ int GaussSBC(
 
     /* create a dynamic temp array */
     double * last_x;
-    last_x = (double * )malloc(matrix_size * matrix_size * sizeof(double));
+    last_x = (double * )malloc(sizeof(double) * matrix_size_2);
 
     /* initialize the last iteration matrix */
-    (void)memcpy(last_x, x, sizeof(double) * matrix_size *  matrix_size);
-
-    /* calculate iterations */
-    done = FALSE;
-    bOverflow = FALSE;
+    (void)memcpy(last_x, x, sizeof(double) * matrix_size_2);
 
     /* ring is determined by following method      */
     /* outmost ring ... 4 * ( nModelDim - 1 )      */
@@ -52,6 +46,7 @@ int GaussSBC(
     /* update last_x[i] when ring level is changed */
     #pragma omp parallel num_threads(NUM_THREADS) 
     {
+        boolean done, bOverflow; 
         double errVal = 0.0;
         int m, i;
         int nRingCnt = 0;
@@ -61,18 +56,21 @@ int GaussSBC(
         int nOA_size = nModelDim  * nModelDim;
         if(ID == 0) nthreads = nthrds;
 
+        /* calculate iterations */
+        done = FALSE;
+        bOverflow = FALSE;
+
         /* create a dynamic temp array */
         double * calc_x;
-        calc_x = (double * )malloc(matrix_size * matrix_size * sizeof(double));
+        calc_x = (double * )malloc(sizeof(double) * matrix_size_2);
 
         /* initialize the last iteration matrix */
-        (void)memcpy(calc_x, x, sizeof(double) * matrix_size *  matrix_size);
+        (void)memcpy(calc_x, x, sizeof(double) * matrix_size_2);
 
         do 
         {
             /* determine if we're done */
             errVal = 0;
-            error = 0;
 
             /* initialize */
             nRingLevel = nModelDim; 
@@ -99,15 +97,24 @@ int GaussSBC(
                     }
                     //break;
                 }
-                
-                if ( nRingCnt == 4 * (nRingLevel - 1) ) { 
+
+                if ( (nRingCnt * NUM_THREADS) == 4 * (nRingLevel - 1) ) { 
                     #pragma omp critical
                     {   
                         /* update calc_x */ 
-                        memcpy(x, calc_x, sizeof(double) * matrix_size *  matrix_size); 
+                        for(int n = 0; n < matrix_size_2; n++){
+                            if(calc_x[n] > x[n]) {
+                                x[n] = calc_x[n];
+                            }
+                        }
 
                         /* update last_x */ 
-                        memcpy(last_x, x, sizeof(double) * matrix_size *  matrix_size); 
+                        //memcpy(last_x, x, sizeof(double) * matrix_size_2); 
+                        for(int n = 0; n < matrix_size_2; n++){
+                            if(x[n] > last_x[n]) {
+                                last_x[n] = x[n];
+                            }
+                        }
 
                         /* reset nRingCnt to zero */
                         nRingCnt = 0;
@@ -117,24 +124,36 @@ int GaussSBC(
                     }
                 }
             }
+            
             #pragma omp critical
-            {
-                /* update error value over all threads */
-                if(errVal > error){
-                    error = errVal;
-                }
-                
+            {                
                 /* increment the iteration counter */
                 iteration++;
 
                 /* update calc_x */ 
-                memcpy(x, calc_x, sizeof(double) * matrix_size *  matrix_size);
+                for(int n = 0; n < matrix_size_2; n++){
+                    if(calc_x[n] > x[n]) {
+                        x[n] = calc_x[n];
+                    }
+                }
 
                 /* copy next_iteration to last_iteration */
-                memcpy(last_x, x, sizeof(double) * matrix_size *  matrix_size);
+                for(int n = 0; n < matrix_size_2; n++){
+                    if(x[n] > last_x[n]) {
+                        last_x[n] = x[n];
+                    }
+                }
 
                 /* we are done if the iteration count exceeds the maximum number of iterations or the calculation converge */
-                if (iteration > max_iterations || error < tolerance || bOverflow) {
+                if (iteration > max_iterations){ 
+                    printf("ITERATIONS: %d / %d\n", iteration, max_iterations);
+                    done = TRUE;
+                } else if (bOverflow) {
+                    printf("OVERFLOW: TRUE\n");
+                    iteration = -iteration;
+                    done = TRUE;
+                } else if (errVal < tolerance){
+                    printf("ERROR: %lf / %lf\n", errVal, tolerance);
                     done = TRUE;
                 }
             }
@@ -147,8 +166,18 @@ int GaussSBC(
     printf("nthreads: %d\n", nthreads);
 
     /* success if iteration between 0 and max_iterations*/
-    if ( bOverflow ) 
-        iteration = -iteration;
-        
+    //if ( bOverflow ) 
+    //    iteration = -iteration;
+
     return iteration;
 }//GaussSBC
+
+//printf("errVal [ %d ] = %lf\n", ID, errVal);
+
+/*for(int n = 0; n < matrix_size_2; n++){
+    if(calc_x[n] > x[n]) {
+        x[n] = calc_x[n];
+    }
+}*/
+
+//memcpy(last_x, x, sizeof(double) * matrix_size_2);

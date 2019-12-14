@@ -213,6 +213,7 @@ void PrintSolution(double x[MATRIX_DIM+2][MATRIX_DIM+2])
         printf("\n");
     }
 }
+
 void GetCalcOrder(int o[MATRIX_DIM*MATRIX_DIM])
 {
     int i, radius;
