@@ -78,7 +78,7 @@ int GaussSBC(
         /* initialize the last iteration matrix */
         (void)memcpy(calcLast_x, x, sizeof(double) * matrix_size_2);
 
-        int chunkSize = nOA_size / NUM_THREADS;
+        //int chunkSize = nOA_size / NUM_THREADS;
 
         do 
         {
@@ -109,7 +109,7 @@ int GaussSBC(
                         printf("OVERFLOW! %lf\n", calc_x[i]);
                         bOverflow = TRUE;
                     }
-                    //break;
+                    break;
                 }
 
                 if ( (nRingCnt * NUM_THREADS) == 4 * (nRingLevel - 1) ) { 
