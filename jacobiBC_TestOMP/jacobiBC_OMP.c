@@ -89,7 +89,7 @@ int JacobiBC_OMP(
 
   printf("ring num %d\n", ring_num);
   
-  for(i = ring_num - 1; i >= 0; i--){  
+  for(i = 0; i < ring_num; i++){  
     //small fix for the last value if matrix size is odd
     if(nModelDim % 2 != 0 && temp == 1)
       ring_work[i] = 1;
@@ -99,40 +99,50 @@ int JacobiBC_OMP(
     temp -= 2;
   }
 
+  int starting_index = 0; 
 
-  do
-    {
-      
-      /* determine if we're done */
-      error = 0;
-      
-      for (j = 0; j < ring_num; j++)
-	{
-	  int starting_index = 0;
-
-	  // we have to determine where we begin inside the total array
-	  // we do this by summing all the work done previously (if any)
-	  
-	  if(j == 0)
-	    starting_index = 0;
-	  else{
-	    for(k = 0; k < j; k++)
-	      starting_index += ring_work[k];
-	  }
-	  
-	  #pragma omp parallel
+#pragma omp parallel shared(last_x, starting_index, done)
+  {
+    do
+      {
+	
+	/* determine if we're done */
+	error = 0;
+	
+	for (j = 0; j < ring_num;)
 	  {
+	    
+	    // we have to determine where we begin inside the total array
+	    // we do this by summing all the work done previously (if any)
+	    
+            #pragma omp single
+	    {
+	      if(j == 0)
+		starting_index = 0;
+	      else{
+		for(k = 0; k < j; k++)
+		  starting_index += ring_work[k];
+	      }
+	    }
+
+	    #pragma omp barrier
+
+	    if(done == true){
+	      break;
+	    }
+	   
 	    int THREAD_COUNT = omp_get_num_threads();
 	    int my_rank = omp_get_thread_num();
 	    int my_first_index, my_last_index;
+	    bool my_update = true; 
 	    // if there is more work than threads (read indices) have some threads just
 	    // skip the whole thing
-
+	    
 	    if(ring_work[j] - 1 >= my_rank){
-
+	      
 	      // calculate the starting and ending indices on the given ring
 	      // using the amount of work, the rank, and the starting index
-
+	      
 	      // make sure the amount of working threads (which we use to divide the work)
 	      // is equal to or less than our thread count (so if there's 2 indices we want two
 	      // threads to do the work not four and if there's 10 indices we want four not ten
@@ -143,9 +153,9 @@ int JacobiBC_OMP(
 	      // we do this because due to the threads that might divide the work unevenly our ceil
 	      // may assign work beyond our current ring
 	      my_last_index = new_min((((my_rank + 1) * local_m) + starting_index), (starting_index + ring_work[j]));   
-	      
-	      for(int m = my_first_index; m < my_last_index; m++){
 
+	      for(int m = my_first_index; m < my_last_index; m++){
+		
 		/* get next one from calc order vector */
 		i = o[m];
 		x[i] = 0.25 * ( last_x[i-1] + last_x[i+1]
@@ -154,54 +164,64 @@ int JacobiBC_OMP(
 		/* determine error before overwrite last_x */
 		if ( fabs(x[i] - last_x[i])/fabs(x[i]) > error )
 		  error = fabs(x[i] - last_x[i])/fabs(x[i]);
-		  		
+		
 		/* if any entry is greater than ELEMENT_MAX, consider it an overflow
 		   and abort */
 		if ((x[i] >= max_element_val) || (x[i] <= -max_element_val))
 		  {
 		    bOverflow = TRUE;
+		    my_update = false;
+		    done = true;
 		    break;
 		  }
 	      }
 	    }
 	    
-	      // create a barrier because we have to wait for all of the above threads to finish
-	      // before we can safely update our matrix
-
-	    #pragma omp barrier
-
-	      //update the indices if they were a part of the work. we can't just wrap the if statement
-	      //around all the work because then the threads who may not be doing work won't get to access it and we hang
-	    if(ring_work[j] >= my_rank){
+	   
+	    //update the indices if they were a part of the work. we can't just wrap the if statement
+	    //around all the work because then the threads who may not be doing work won't get to access it and we hang
+	    if(ring_work[j] >= my_rank && my_update == true){
 	      for(int m = my_first_index; m < my_last_index; m++)
 		last_x[o[m]] = x[o[m]];
 	    }
-	      
-	    
-	  }
-	}
-	
-      /* increment the iteration counter */
-      iteration++;
-      
-      /* we are done if the iteration count exceeds the maximum number of iterations
-	 or the calculation converge */
-      if ( iteration > max_iterations
-	   || error < tolerance
-	   || bOverflow)
-	{
-	  done = TRUE;
-	}
-      
-      /* copy next_iteration to last_iteration */
-      //memcpy(last_x, x, sizeof(double) * matrix_size *  matrix_size);
-    } while (!done);
-  
-      free(last_x);
-      
-      if ( bOverflow )
-	iteration = -iteration;
+	  
 
-      /* success if iteration between 0 and max_iterations*/
-      return iteration;
+	    #pragma omp barrier
+
+       
+	    if(done == true)
+	       break;
+
+	    #pragma omp single
+	    j++;
+	     
+	  }
+	
+
+	/* increment the iteration counter but only once each time */
+	#pragma omp single
+	iteration++;
+	
+	/* we are done if the iteration count exceeds the maximum number of iterations
+	   or the calculation converge */
+	if ( iteration > max_iterations
+	     || error < tolerance
+	     || bOverflow)
+	  {
+	    done = TRUE;
+	  }
+
+	//printf("at end\n"); 
+
+      #pragma omp barrier 
+	
+      } while (!done);
+  }
+  free(last_x);
+  
+  if ( bOverflow )
+    iteration = -iteration;
+  
+  /* success if iteration between 0 and max_iterations*/
+  return iteration;
 }//JacobiIterative
