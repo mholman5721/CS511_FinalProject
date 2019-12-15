@@ -1,7 +1,7 @@
 /****************************************************************************
  * jacobi.h                                                                 *
  *                                                                          *
- * Header file for jacobi.c                                                 *
+ * Header file for jacobiBC_OMP.c                                           *
  *                                                                          *
  *    11/26/04 WQ -- file created                                           *
  ****************************************************************************/
@@ -11,7 +11,7 @@
 
 #include "const.h"
 
-int JacobiIterative(
+int JacobiBC_OMP(
 	     double * x,
 	     int * o,
 	     const unsigned int matrix_size,

@@ -11,7 +11,7 @@
 
 #include "const.h"
 
-int JacobiIterative(
+int JacobiBC(
 	     double * x,
 	     int * o,
 	     const unsigned int matrix_size,

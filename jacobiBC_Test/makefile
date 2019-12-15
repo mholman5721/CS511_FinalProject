@@ -6,9 +6,9 @@
 ##    11/26/04 WQ -- Makefile created                                      ##
 ##    12/09/19 WQ -- Makefile updated                                      ##
 #############################################################################
-PRJT   = jacobiIterative_Test
-NAME   = testJacobiIterative
-SRCT   = jacobiIterative.c jacobiIterative_Test.c
+PRJT   = jacobiBC_Test
+NAME   = testJacobiBC
+SRCT   = jacobiBC.c jacobiBC_Test.c
 INCL   = jacobi.h const.h
 OBJT   = $(SRCT:%.c=%.o)
 

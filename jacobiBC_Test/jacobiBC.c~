@@ -1,7 +1,7 @@
 /****************************************************************************
- * jacobiBC2.c                                                                 *
+ * jacobiBC.c                                                               *
  *                                                                          *
- * Solves a system of linear equations using Jacobi iteration               *
+ * Boundary condition - ringed jacobi with no parallelization               *
  *                                                                          *
  *    11/26/04 WQ -- file created                                           *
  ****************************************************************************/
@@ -13,12 +13,11 @@
 
 
 /*  
- * Jacobi()
- * Solves a system of linear equations in the form a*x=b using Jacobi iteration
+ * JacobiBC()
+ * Given a relaxation mesh. Iterate until the boundary has been distributed through the mesh
  *
  * Parameters:
- *   a, b - matrices containing the system of linear equations
- *   x - destination matrix used to store the solution to the system
+ *   x, o - x contains the boundary and relaxation mesh (solution) values
  *   matrix_size - matrix size, a would be a m * m two dimension array while b and x are one 
  *       dimension array
  *   max_iterations
@@ -30,7 +29,7 @@
 
 /* update x after calculation on each ring, calculated from outside to center */
 /* overwrite tmp array element by element rather than using memcpy */
-int JacobiIterative(
+int JacobiBC(
 	      double * x,
 	      int * o,
 	      const unsigned int matrix_size,
@@ -105,12 +104,17 @@ int JacobiIterative(
 
 	      if ( nRingCnt == 4 * (nRingLevel - 1) )
 		{
+		  printf("%d\n",m);
+		  if(4 * (nRingLevel - 1) == 0)
+		    printf("HERE\n"); 
 		  /* update last_x */
+
+		  printf("before %f\n", last_x[o[8]]); 
 		  //memcpy(last_x, x, sizeof(double) * matrix_size *  matrix_size);
 		  for (mm=1; mm<=nRingCnt; mm++) {
-		    last_x[o[m-nRingCnt+mm]] = x[o[m-nRingCnt+mm]];
+		    last_x[o[m-nRingCnt+mm]] = x[o[m-nRingCnt+mm]]; 
 		  }
-
+		  printf("after %f\n", last_x[o[8]]); 
 		  /* reset nRingCnt to zero */
 		  nRingCnt = 0;
 
@@ -118,8 +122,11 @@ int JacobiIterative(
 		  nRingLevel = nRingLevel - 2;
 		  //printf("\n");
 		}
-	    }
+	      else if ( nModelDim % 2 != 0 && m == nOA_size - 1)
+		last_x[o[m]] = x[o[m]]; 
 
+	    }
+	   
 	  /* increment the iteration counter */
 	  iteration++;
 

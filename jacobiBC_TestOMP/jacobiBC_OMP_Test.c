@@ -107,7 +107,7 @@ int main(int argc, char* argv[])
   
   /* test the matrix with the Jacobi algorithm */
   gettimeofday(&tvStart, &tzp);
-  result = JacobiIterative((double *)solution_vector,
+  result = JacobiBC_OMP((double *)solution_vector,
 		    calc_order_vector, MATRIX_DIM+2,
 		    g_myConfig.max_iteration,
 		    g_myConfig.max_element_value,
@@ -170,7 +170,6 @@ void MakeInitialMatrix(double x[MATRIX_DIM+2][MATRIX_DIM+2])
   if ( MATRIX_DEBUG > 0 )
     printf("\nPrint matrix x[][]\n");
 
-  g_myConfig.right = 10;
   for (i=0; i<modelDimension; i++) {
     x[0][i] = g_myConfig.up;
     x[modelDimension-1][i] = g_myConfig.down;
