@@ -72,7 +72,7 @@ int main(int argc, char* argv[])
   }
 
   /* get configuration from config file */
-  if ( GetConfig() == FALSE )
+  if ( GetConfig() == false )
     printf("Failed to get settings from config file, use default"
 	   " values for calculation.\n");
 
