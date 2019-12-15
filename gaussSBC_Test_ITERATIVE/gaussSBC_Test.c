@@ -215,36 +215,18 @@ void PrintSolution(double x[MATRIX_DIM+2][MATRIX_DIM+2])
 }
 void GetCalcOrder(int o[MATRIX_DIM*MATRIX_DIM])
 {
-    int i, radius;
-    int ki, kj;
-    int modelDim;
-    int m, low, high;
-    modelDim = MATRIX_DIM;
+    int val = MATRIX_DIM + 3;
 
-    radius = (modelDim + 1) / 2; 
-    i = 0;
-    for ( m = 0; m < radius; m++ ) 
-    {
-        for (ki = 0; ki < modelDim; ki++) 
-            for ( kj=0; kj < modelDim; kj++)
-            {
-                low = m;
-                high = modelDim - 1 - m;
-                if(((ki==low || ki==high) && (kj >= low && kj <= high)) 
-                || ((kj==low || kj==high) && (ki >= low && ki <= high))  
-                  ) 
-                {
-                    o[i] = ki*modelDim+kj;
-                    o[i] += ki * 2 + modelDim + 2 + 1;
-                    i++;
-                }
-            }
-    } 
+    for (int ki = 0; ki < MATRIX_DIM; ki++){
+        for (int kj = 0; kj < MATRIX_DIM; kj++){
+            o[(ki*MATRIX_DIM) + kj] = val + (ki*MATRIX_DIM) + kj + (2 * ki);
+        }
+    }
 
     if ( MATRIX_DEBUG > 0 ) 
     {
         printf("\nCalcOrder{");
-        for (i=0; i<MATRIX_DIM*MATRIX_DIM; i++)
+        for (int i=0; i<MATRIX_DIM*MATRIX_DIM; i++)
             printf("%d,", o[i]);
         printf("}\n");
     }
