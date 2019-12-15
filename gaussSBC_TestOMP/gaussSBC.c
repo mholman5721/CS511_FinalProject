@@ -96,8 +96,10 @@ int GaussSBC(
                 /* get next one from calc order vector */
                 i = o[m];
                 calc_x[i] = 0.25 * (calc_x[i-1] + calc_x[i+1] + calc_x[i-matrix_size] + calc_x[i+matrix_size]);
-
+                
                 nRingCnt++;
+
+                printf("[ %d ] : i = %d : calc_x[i] = %lf : nRingCnt = %d\n", ID, i, calc_x[i], nRingCnt);
 
                 /* determine error before overwrite last_x */
                 if ( fabs(calc_x[i] - calcLast_x[i])/fabs(calc_x[i]) > errVal[ID] ) {
@@ -113,6 +115,8 @@ int GaussSBC(
                     }
                     break;
                 }
+
+                printf("[ %d ] : nRingCnt * NUM_THREADS = %d : 4 * (nRingLevel - 1) = %d\n", ID, nRingCnt * NUM_THREADS, 4 * (nRingLevel - 1));
 
                 if ( (nRingCnt * NUM_THREADS) == 4 * (nRingLevel - 1) ) { 
                     #pragma omp critical
@@ -145,7 +149,6 @@ int GaussSBC(
                         nRingLevel = nRingLevel - 2;
                     }
                 } else if (nModelDim % 2 != 0 && i == o[nOA_size-1]){
-                    printf("HERE\n");
                     #pragma omp critical
                     {   
                         /* update calc_x */ 
