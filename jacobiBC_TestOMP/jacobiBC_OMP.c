@@ -46,7 +46,7 @@ int JacobiBC_OMP(
   boolean   done, bOverflow;
   int nModelDim, nRingLevel, nRingCnt;
   nModelDim = matrix_size-2;
-  printf("here\n");
+  
   /* verify inputs */
   if ( matrix_size == 0 || tolerance <= 0 || max_iterations == 0 )
     return 0; /* invalid inputs */
