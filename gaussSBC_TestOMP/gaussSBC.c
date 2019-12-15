@@ -28,6 +28,12 @@ int GaussSBC(
     int matrix_size_2 = matrix_size * matrix_size;
     int nthreads;
     int iteration;
+    boolean done[NUM_THREADS];
+    boolean allDone = FALSE;
+
+    for(int n = 0; n < NUM_THREADS; n++){
+        done[n] = FALSE;
+    }
 
     /* verify inputs */
     if ( matrix_size == 0 || tolerance <= 0 || max_iterations == 0 )
@@ -47,7 +53,7 @@ int GaussSBC(
     /* update last_x[i] when ring level is changed */
     #pragma omp parallel num_threads(NUM_THREADS) 
     {
-        boolean done, bOverflow; 
+        boolean bOverflow; 
         int m, i;
         int nRingCnt = 0;
         int nRingLevel = 0;
@@ -61,7 +67,7 @@ int GaussSBC(
         }
 
         /* calculate iterations */
-        done = FALSE;
+        done[ID] = FALSE;
         bOverflow = FALSE;
 
         /* create a dynamic temp array */
@@ -86,6 +92,7 @@ int GaussSBC(
         {
             /* determine if we're done */
             errVal[ID] = 0.0;
+            done[ID] = FALSE;
 
             /* initialize */
             nRingLevel = nModelDim; 
@@ -245,18 +252,28 @@ int GaussSBC(
                 /* we are done if the iteration count exceeds the maximum number of iterations or the calculation converge */
                 if (iteration > max_iterations){ 
                     printf("ITERATIONS: %d / %d\n", iteration, max_iterations);
-                    done = TRUE;
+                    done[ID] = TRUE;
                 } else if (bOverflow) {
                     printf("OVERFLOW: TRUE\n");
                     iteration = -iteration;
-                    done = TRUE;
+                    done[ID] = TRUE;
                 } else if (errCount == NUM_THREADS){
                     printf("ERROR [ %d ]: %lf / %lf\n", ID, errVal, tolerance);
-                    done = TRUE;
+                    done[ID] = TRUE;
                 } 
             }
-            //#pragma omp barrier // need ALL threads to be done above
-        } while (!done);
+            #pragma omp barrier
+
+            int doneCount = 0;
+            for(int n = 0; n < NUM_THREADS; n++){
+                if(done[n] == TRUE){
+                    doneCount++;
+                }
+            }
+            if(doneCount == NUM_THREADS){
+                allDone = TRUE;
+            }
+        } while (!allDone);
     }
 
     free(last_x);
