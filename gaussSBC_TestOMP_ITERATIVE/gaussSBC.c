@@ -110,42 +110,8 @@ int GaussSBC(
 
                 /* if any entry is greater than ELEMENT_MAX, consider it an overflow and abort */
                 if ((calc_x[i] >= max_element_val) || (calc_x[i] <= -max_element_val)){
-                    #pragma omp critical
-                    {
-                        printf("[ %d ]: OVERFLOW! %lf\n", ID, calc_x[i]);
-                        bOverflow = TRUE;
-                    }
-                }
-
-                #pragma omp critical
-                {   
-                    /* update x */ 
-                    for(int n = 0; n < matrix_size_2; n++){
-                        if(x[n] < calc_x[n]) {
-                            x[n] = calc_x[n];
-                        }
-                    }
-
-                    /* update calc_x */ 
-                    for(int n = 0; n < matrix_size_2; n++){
-                        if(x[n] > calc_x[n]) {
-                            calc_x[n] = x[n];
-                        }
-                    }
-
-                    /* update calcLast_x */ 
-                    for(int n = 0; n < matrix_size_2; n++){
-                        if(calcLast_x[n] < x[n]) {
-                            calcLast_x[n] = x[n];
-                        }
-                    }
-
-                    /* update last_x */ 
-                    for(int n = 0; n < matrix_size_2; n++){
-                        if(last_x[n] < x[n]) {
-                            last_x[n] = x[n];
-                        }
-                    }
+                    printf("[ %d ]: OVERFLOW! %lf\n", ID, calc_x[i]);
+                    bOverflow = TRUE;
                 }
             }
             
@@ -220,19 +186,5 @@ int GaussSBC(
 
     printf("nthreads: %d\n", nthreads);
 
-    /* success if iteration between 0 and max_iterations*/
-    //if ( bOverflow ) 
-    //    iteration = -iteration;
-
     return iteration;
 }//GaussSBC
-
-//printf("errVal [ %d ] = %lf\n", ID, errVal);
-
-/*for(int n = 0; n < matrix_size_2; n++){
-    if(calc_x[n] > x[n]) {
-        x[n] = calc_x[n];
-    }
-}*/
-
-//memcpy(last_x, x, sizeof(double) * matrix_size_2);
