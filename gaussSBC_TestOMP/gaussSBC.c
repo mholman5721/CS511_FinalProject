@@ -80,6 +80,8 @@ int GaussSBC(
 
         //int chunkSize = nOA_size / NUM_THREADS;
 
+        #pragma omp barrier
+
         do 
         {
             /* determine if we're done */
