@@ -147,6 +147,7 @@ int GaussSBC(
 
                         /* go to next level */
                         nRingLevel = nRingLevel - 2;
+                        printf("[ %d ] : UPDATE MAIN : nRingCnt = %d : nRingLevel = %d\n", ID, nRingCnt, nRingLevel);
                     }
                 } else if (nModelDim % 2 != 0 && i == o[nOA_size-1]){
                     #pragma omp critical
@@ -176,7 +177,8 @@ int GaussSBC(
                         nRingCnt = 0;
 
                         /* go to next level */
-                        nRingLevel = nRingLevel - 2;
+                        nRingLevel = 0;
+                        printf("[ %d ] : UPDATE LAST : nRingCnt = %d : nRingLevel = %d\n", ID, nRingCnt, nRingLevel);
                     }
                 }
             }
@@ -227,6 +229,7 @@ int GaussSBC(
                     done = TRUE;
                 } 
             }
+            #pragma omp barrier
             //printf("Thread: %d\n", ID);
         } while (!done);
     }
