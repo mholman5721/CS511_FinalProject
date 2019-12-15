@@ -90,16 +90,16 @@ int GaussSBC(
             /* initialize */
             nRingLevel = nModelDim; 
             nRingCnt = 0;
-
+            
             for (m = ID; m < nOA_size; m = m + nthrds){
             //for (m = (ID * chunkSize); m < (ID * chunkSize) + chunkSize; m++){
                 /* get next one from calc order vector */
                 i = o[m];
                 calc_x[i] = 0.25 * (calc_x[i-1] + calc_x[i+1] + calc_x[i-matrix_size] + calc_x[i+matrix_size]);
-                
+
                 nRingCnt++;
 
-                printf("[ %d ] : i = %d : calc_x[i] = %lf : nRingCnt = %d\n", ID, i, calc_x[i], nRingCnt);
+                //printf("[ %d ] : i = %d : calc_x[i] = %lf : nRingCnt = %d\n", ID, i, calc_x[i], nRingCnt);
 
                 /* determine error before overwrite last_x */
                 if ( fabs(calc_x[i] - calcLast_x[i])/fabs(calc_x[i]) > errVal[ID] ) {
@@ -113,18 +113,24 @@ int GaussSBC(
                         printf("OVERFLOW! %lf\n", calc_x[i]);
                         bOverflow = TRUE;
                     }
-                    break;
                 }
 
-                printf("[ %d ] : nRingCnt * NUM_THREADS = %d : 4 * (nRingLevel - 1) = %d\n", ID, nRingCnt * NUM_THREADS, 4 * (nRingLevel - 1));
+                //printf("[ %d ] : nRingCnt * NUM_THREADS = %d : 4 * (nRingLevel - 1) = %d\n", ID, nRingCnt * NUM_THREADS, 4 * (nRingLevel - 1));
 
                 if ( (nRingCnt * NUM_THREADS) == 4 * (nRingLevel - 1) ) { 
                     #pragma omp critical
                     {   
-                        /* update calc_x */ 
+                        /* update x */ 
                         for(int n = 0; n < matrix_size_2; n++){
                             if(x[n] < calc_x[n]) {
                                 x[n] = calc_x[n];
+                            }
+                        }
+
+                        /* update calc_x */ 
+                        for(int n = 0; n < matrix_size_2; n++){
+                            if(x[n] > calc_x[n]) {
+                                calc_x[n] = x[n];
                             }
                         }
 
@@ -147,15 +153,25 @@ int GaussSBC(
 
                         /* go to next level */
                         nRingLevel = nRingLevel - 2;
-                        printf("[ %d ] : UPDATE MAIN : nRingCnt = %d : nRingLevel = %d\n", ID, nRingCnt, nRingLevel);
+                        if(nRingLevel < 0){
+                            nRingLevel = 0;
+                        }
+                        //printf("[ %d ] : UPDATE MAIN : nRingCnt = %d : nRingLevel = %d\n", ID, nRingCnt, nRingLevel);
                     }
                 } else if (nModelDim % 2 != 0 && i == o[nOA_size-1]){
                     #pragma omp critical
                     {   
-                        /* update calc_x */ 
+                        /* update x */ 
                         for(int n = 0; n < matrix_size_2; n++){
                             if(x[n] < calc_x[n]) {
                                 x[n] = calc_x[n];
+                            }
+                        }
+
+                        /* update calc_x */ 
+                        for(int n = 0; n < matrix_size_2; n++){
+                            if(x[n] > calc_x[n]) {
+                                calc_x[n] = x[n];
                             }
                         }
 
@@ -177,8 +193,11 @@ int GaussSBC(
                         nRingCnt = 0;
 
                         /* go to next level */
-                        nRingLevel = 0;
-                        printf("[ %d ] : UPDATE LAST : nRingCnt = %d : nRingLevel = %d\n", ID, nRingCnt, nRingLevel);
+                        nRingLevel = nRingLevel - 2;
+                        if(nRingLevel < 0){
+                            nRingLevel = 0;
+                        }
+                        //printf("[ %d ] : UPDATE LAST : nRingCnt = %d : nRingLevel = %d\n", ID, nRingCnt, nRingLevel);
                     }
                 }
             }
@@ -188,10 +207,17 @@ int GaussSBC(
                 /* increment the iteration counter */
                 iteration++;
 
-                /* update calc_x */ 
+                /* update x */ 
                 for(int n = 0; n < matrix_size_2; n++){
                     if(x[n] < calc_x[n]) {
                         x[n] = calc_x[n];
+                    }
+                }
+
+                /* update calc_x */ 
+                for(int n = 0; n < matrix_size_2; n++){
+                    if(x[n] > calc_x[n]) {
+                        calc_x[n] = x[n];
                     }
                 }
 
@@ -215,7 +241,7 @@ int GaussSBC(
                         errCount++;
                     }
                 }
-
+                
                 /* we are done if the iteration count exceeds the maximum number of iterations or the calculation converge */
                 if (iteration > max_iterations){ 
                     printf("ITERATIONS: %d / %d\n", iteration, max_iterations);
@@ -229,8 +255,7 @@ int GaussSBC(
                     done = TRUE;
                 } 
             }
-            #pragma omp barrier
-            //printf("Thread: %d\n", ID);
+            //#pragma omp barrier // need ALL threads to be done above
         } while (!done);
     }
 
