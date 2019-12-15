@@ -46,7 +46,7 @@ int JacobiBC_OMP(
   boolean   done, bOverflow;
   int nModelDim, nRingLevel, nRingCnt;
   nModelDim = matrix_size-2;
-
+  
   /* verify inputs */
   if ( matrix_size == 0 || tolerance <= 0 || max_iterations == 0 )
     return 0; /* invalid inputs */
@@ -77,7 +77,7 @@ int JacobiBC_OMP(
   int temp = nModelDim;
   
   while(temp > 0){
-    ring_num++; 
+    ring_num++;
     temp -= 2;
   }
 
@@ -86,8 +86,6 @@ int JacobiBC_OMP(
   
   int ring_work[ring_num];
   temp = nModelDim; 
-
-  printf("ring num %d\n", ring_num);
   
   for(i = 0; i < ring_num; i++){  
     //small fix for the last value if matrix size is odd
@@ -95,12 +93,14 @@ int JacobiBC_OMP(
       ring_work[i] = 1;
     else
       ring_work[i] = 4 * (temp - 1); 
-
+  
     temp -= 2;
+  
   }
 
   int starting_index = 0; 
 
+  
 #pragma omp parallel shared(last_x, starting_index, done)
   {
     do
@@ -120,11 +120,10 @@ int JacobiBC_OMP(
 	      if(j == 0)
 		starting_index = 0;
 	      else{
-		for(k = 0; k < j; k++)
-		  starting_index += ring_work[k];
+		starting_index += ring_work[j - 1];
 	      }
 	    }
-
+	    
 	    #pragma omp barrier
 
 	    if(done == true){
@@ -187,7 +186,6 @@ int JacobiBC_OMP(
 	  
 
 	    #pragma omp barrier
-
        
 	    if(done == true)
 	       break;
