@@ -84,8 +84,6 @@ int GaussSBC(
         /* initialize the last iteration matrix */
         (void)memcpy(calcLast_x, x, sizeof(double) * matrix_size_2);
 
-        //int chunkSize = nOA_size / NUM_THREADS;
-
         #pragma omp barrier
 
         do 
@@ -99,14 +97,11 @@ int GaussSBC(
             nRingCnt = 0;
             
             for (m = ID; m < nOA_size; m = m + nthrds){
-            //for (m = (ID * chunkSize); m < (ID * chunkSize) + chunkSize; m++){
                 /* get next one from calc order vector */
                 i = o[m];
                 calc_x[i] = 0.25 * (calc_x[i-1] + calc_x[i+1] + calc_x[i-matrix_size] + calc_x[i+matrix_size]);
 
                 nRingCnt++;
-
-                //printf("[ %d ] : i = %d : calc_x[i] = %lf : nRingCnt = %d\n", ID, i, calc_x[i], nRingCnt);
 
                 /* determine error before overwrite last_x */
                 if ( fabs(calc_x[i] - calcLast_x[i])/fabs(calc_x[i]) > errVal[ID] ) {
@@ -122,89 +117,34 @@ int GaussSBC(
                     }
                 }
 
-                //printf("[ %d ] : nRingCnt * NUM_THREADS = %d : 4 * (nRingLevel - 1) = %d\n", ID, nRingCnt * NUM_THREADS, 4 * (nRingLevel - 1));
-
-                if ( (nRingCnt * NUM_THREADS) == 4 * (nRingLevel - 1) ) { 
-                    #pragma omp critical
-                    {   
-                        /* update x */ 
-                        for(int n = 0; n < matrix_size_2; n++){
-                            if(x[n] < calc_x[n]) {
-                                x[n] = calc_x[n];
-                            }
+                #pragma omp critical
+                {   
+                    /* update x */ 
+                    for(int n = 0; n < matrix_size_2; n++){
+                        if(x[n] < calc_x[n]) {
+                            x[n] = calc_x[n];
                         }
-
-                        /* update calc_x */ 
-                        for(int n = 0; n < matrix_size_2; n++){
-                            if(x[n] > calc_x[n]) {
-                                calc_x[n] = x[n];
-                            }
-                        }
-
-                        /* update calcLast_x */ 
-                        for(int n = 0; n < matrix_size_2; n++){
-                            if(calcLast_x[n] < x[n]) {
-                                calcLast_x[n] = x[n];
-                            }
-                        }
-
-                        /* update last_x */ 
-                        for(int n = 0; n < matrix_size_2; n++){
-                            if(last_x[n] < x[n]) {
-                                last_x[n] = x[n];
-                            }
-                        }
-
-                        /* reset nRingCnt to zero */
-                        nRingCnt = 0;
-
-                        /* go to next level */
-                        nRingLevel = nRingLevel - 2;
-                        if(nRingLevel < 0){
-                            nRingLevel = 0;
-                        }
-                        //printf("[ %d ] : UPDATE MAIN : nRingCnt = %d : nRingLevel = %d\n", ID, nRingCnt, nRingLevel);
                     }
-                } else if (nModelDim % 2 != 0 && i == o[nOA_size-1]){
-                    #pragma omp critical
-                    {   
-                        /* update x */ 
-                        for(int n = 0; n < matrix_size_2; n++){
-                            if(x[n] < calc_x[n]) {
-                                x[n] = calc_x[n];
-                            }
-                        }
 
-                        /* update calc_x */ 
-                        for(int n = 0; n < matrix_size_2; n++){
-                            if(x[n] > calc_x[n]) {
-                                calc_x[n] = x[n];
-                            }
+                    /* update calc_x */ 
+                    for(int n = 0; n < matrix_size_2; n++){
+                        if(x[n] > calc_x[n]) {
+                            calc_x[n] = x[n];
                         }
+                    }
 
-                        /* update calcLast_x */ 
-                        for(int n = 0; n < matrix_size_2; n++){
-                            if(calcLast_x[n] < x[n]) {
-                                calcLast_x[n] = x[n];
-                            }
+                    /* update calcLast_x */ 
+                    for(int n = 0; n < matrix_size_2; n++){
+                        if(calcLast_x[n] < x[n]) {
+                            calcLast_x[n] = x[n];
                         }
+                    }
 
-                        /* update last_x */ 
-                        for(int n = 0; n < matrix_size_2; n++){
-                            if(last_x[n] < x[n]) {
-                                last_x[n] = x[n];
-                            }
+                    /* update last_x */ 
+                    for(int n = 0; n < matrix_size_2; n++){
+                        if(last_x[n] < x[n]) {
+                            last_x[n] = x[n];
                         }
-
-                        /* reset nRingCnt to zero */
-                        nRingCnt = 0;
-
-                        /* go to next level */
-                        nRingLevel = nRingLevel - 2;
-                        if(nRingLevel < 0){
-                            nRingLevel = 0;
-                        }
-                        //printf("[ %d ] : UPDATE LAST : nRingCnt = %d : nRingLevel = %d\n", ID, nRingCnt, nRingLevel);
                     }
                 }
             }
