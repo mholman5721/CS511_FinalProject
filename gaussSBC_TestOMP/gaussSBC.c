@@ -142,6 +142,37 @@ int GaussSBC(
                         /* go to next level */
                         nRingLevel = nRingLevel - 2;
                     }
+                } else if (nModelDim % 2 != 0 && i == o[nOA_size-1]){
+                    printf("HERE\n");
+                    #pragma omp critical
+                    {   
+                        /* update calc_x */ 
+                        for(int n = 0; n < matrix_size_2; n++){
+                            if(x[n] < calc_x[n]) {
+                                x[n] = calc_x[n];
+                            }
+                        }
+
+                        /* update calcLast_x */ 
+                        for(int n = 0; n < matrix_size_2; n++){
+                            if(calcLast_x[n] < x[n]) {
+                                calcLast_x[n] = x[n];
+                            }
+                        }
+
+                        /* update last_x */ 
+                        for(int n = 0; n < matrix_size_2; n++){
+                            if(last_x[n] < x[n]) {
+                                last_x[n] = x[n];
+                            }
+                        }
+
+                        /* reset nRingCnt to zero */
+                        nRingCnt = 0;
+
+                        /* go to next level */
+                        nRingLevel = nRingLevel - 2;
+                    }
                 }
             }
             
