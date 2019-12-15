@@ -101,7 +101,7 @@ int JacobiBC_OMP(
   int starting_index = 0; 
 
   
-#pragma omp parallel shared(last_x, starting_index, done)
+#pragma omp parallel num_threads(NUM_THREADS) shared(last_x, starting_index, done)
   {
     do
       {
