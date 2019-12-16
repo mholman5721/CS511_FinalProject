@@ -30,3 +30,7 @@
 *.exe
 *.out
 *.app
+
+# Files
+data_file_iterations.txt
+data_file_time.txt
