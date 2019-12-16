@@ -7,7 +7,7 @@
 ##    12/09/19 WQ -- Makefile updated                                      ##
 #############################################################################
 PRJT   = gaussSBC_Test
-NAME   = testGaussSBC_OMP
+NAME   = testGaussSBC_OMP_RING
 SRCT   = gaussSBC.c gaussSBC_Test.c
 INCL   = gaussSBC.h const.h
 OBJT   = $(SRCT:%.c=%.o)

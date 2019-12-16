@@ -122,9 +122,17 @@ int main(int argc, char* argv[])
     /* display the results */
     if ( MATRIX_DEBUG >= 0 ) {
         printf("Results:\n");
-        printf("GaussSBC: Iterations=%d Time Cost=%d\n",
-            result, n_uSecLapsedJ);
+        printf("gaussSBC_TestOMP_ITERATIVE: Iterations=%d Time Cost=%d NUM_THREADS=%d MATRIX_DIM=%d\n",
+            result, n_uSecLapsedJ, NUM_THREADS, MATRIX_DIM);
     }
+
+    FILE *f_iterations = fopen("data_file_iterations.txt", "a");
+    fprintf(f_iterations, "%d\n", result);
+    fclose(f_iterations);
+
+    FILE *f_time = fopen("data_file_time.txt", "a");
+    fprintf(f_time, "%d\n", n_uSecLapsedJ);
+    fclose(f_time); 
 
     return EXIT_SUCCESS;
 }

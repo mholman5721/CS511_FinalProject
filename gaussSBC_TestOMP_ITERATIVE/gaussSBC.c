@@ -114,7 +114,7 @@ int GaussSBC(
                     bOverflow = TRUE;
                 }
             }
-            
+            #pragma omp barrier
             #pragma omp critical
             {                
                 /* increment the iteration counter */
@@ -164,12 +164,10 @@ int GaussSBC(
                     iteration = -iteration;
                     done[ID] = TRUE;
                 } else if (errCount == NUM_THREADS){
-                    printf("ERROR [ %d ]: %lf / %lf\n", ID, errVal, tolerance);
+                    //printf("ERROR [ %d ]: %lf / %lf\n", ID, errVal, tolerance);
                     done[ID] = TRUE;
                 } 
             }
-            #pragma omp barrier
-
             int doneCount = 0;
             for(int n = 0; n < NUM_THREADS; n++){
                 if(done[n] == TRUE){
@@ -178,7 +176,10 @@ int GaussSBC(
             }
             if(doneCount == NUM_THREADS){
                 allDone = TRUE;
+            } else {
+                allDone = FALSE;
             }
+            #pragma omp barrier
         } while (!allDone);
     }
 
