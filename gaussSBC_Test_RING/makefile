@@ -6,7 +6,7 @@
 ##    11/26/04 WQ -- Makefile created                                      ##
 ##    12/09/19 WQ -- Makefile updated                                      ##
 #############################################################################
-PRJT   = gaussSBC_Test
+PRJT   = testGaussSBC_Ring
 NAME   = testGaussSBC_Ring
 SRCT   = gaussSBC.c gaussSBC_Test.c
 INCL   = gaussSBC.h const.h

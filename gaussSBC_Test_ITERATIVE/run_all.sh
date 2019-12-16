@@ -9,7 +9,7 @@ EXECUTABLES=("testGaussSBC" "testGaussSBC_Ring" "testGaussSBC_OMP" "testJacobiIt
 DIMS_COUNT=10
 THREADS_COUNT=1
 MAX_THREADS=4
-MAX_DIMS=300
+MAX_DIMS=100
 
 CUR_EXECUTABLE=0
 
@@ -17,33 +17,30 @@ for dir in ${RUN_DIRS[@]};
 do
     cd $dir
     rm *.txt
+    make clean
     echo $dir
     while [[ ${THREADS_COUNT} -le ${MAX_THREADS} ]]
     do
-	  while [[ $DIMS_COUNT -le ${MAX_DIMS} ]]
-	  do
-	      if [[ $CUR_EXECUTABLE = 0 ]] || [[$CUR_EXECUTABLE = 1]]; then
-		 python ${PY_OMP_SCRIPT} ${CUR_DIR}/${dir}/const.h ${DIMS_COUNT} ${THREADS_COUNT}
-	      else
-		 python ${PY_SCRIPT} ${CUR_DIR}/${dir}/const.h ${DIMS_COUNT}
-	      fi
-	      
-	      make
-	      ./${EXECUTABLES[${CUR_EXECUTABLE}]}
+	while [[ $DIMS_COUNT -le ${MAX_DIMS} ]]
+	do
+	    if [[ $CUR_EXECUTABLE = 2 ]] || [[ $CUR_EXECUTABLE = 5 ]]; then
+		python ${PY_OMP_SCRIPT} ${CUR_DIR}/${dir}/const.h ${DIMS_COUNT} ${THREADS_COUNT}
+	    else
+		python ${PY_SCRIPT} ${CUR_DIR}/${dir}/const.h ${DIMS_COUNT}
+	    fi
 
-	      ((DIMS_COUNT++))
-	  done
-	  mv "data_file_iterations.txt" $CUR_DIR/data_files/${EXECUTABLES[${CUR_EXECUTABLE}]}_${THREADS_COUNT}_iterations.txt
-	  mv "data_file_time.txt" $CUR_DIR/data_files/${EXECUTABLES[${CUR_EXECUTABLE}]}_${THREADS_COUNT}_time.txt
+	    make
+	    ./${EXECUTABLES[${CUR_EXECUTABLE}]}
 
-	  ((THREADS_COUNT++))
-	  DIMS_COUNT=10
+	    ((DIMS_COUNT++))
+	done
+	mv "data_file_iterations.txt" $CUR_DIR/data_files/${EXECUTABLES[${CUR_EXECUTABLE}]}_${THREADS_COUNT}_iterations.txt
+	mv "data_file_time.txt" $CUR_DIR/data_files/${EXECUTABLES[${CUR_EXECUTABLE}]}_${THREADS_COUNT}_time.txt
+
+	((THREADS_COUNT++))
+	DIMS_COUNT=10
     done
     ((CUR_EXECUTABLE++))
     THREADS_COUNT=1
     cd ${CUR_DIR}
-done
-
-    
-
-
+    done
