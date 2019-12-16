@@ -9,13 +9,14 @@ EXECUTABLES=("testGaussSBC" "testGaussSBC_Ring" "testGaussSBC_OMP" "testJacobiIt
 DIMS_COUNT=10
 THREADS_COUNT=1
 MAX_THREADS=4
-MAX_DIMS=300
+MAX_DIMS=100
 
 CUR_EXECUTABLE=0
 
 for dir in ${RUN_DIRS[@]};
 do
     cd $dir
+    rm *.txt
     echo $dir
     while [[ ${THREADS_COUNT} -le ${MAX_THREADS} ]]
     do
@@ -36,7 +37,7 @@ do
 	  mv "data_file_time.txt" $CUR_DIR/data_files/${EXECUTABLES[${CUR_EXECUTABLE}]}_${THREADS_COUNT}_time.txt
 
 	  ((THREADS_COUNT++))
-	  DIMS_COUNT=1
+	  DIMS_COUNT=10
     done
     ((CUR_EXECUTABLE++))
     THREADS_COUNT=1
