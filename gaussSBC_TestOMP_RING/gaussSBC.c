@@ -164,7 +164,7 @@ int GaussSBC(
                     iteration = -iteration;
                     done[ID] = TRUE;
                 } else if (errCount == NUM_THREADS){
-                    printf("ERROR [ %d ]: %lf / %lf\n", ID, errVal, tolerance);
+		  //printf("ERROR [ %d ]: %lf / %lf\n", ID, errVal, tolerance);
                     done[ID] = TRUE;
                 } 
             }

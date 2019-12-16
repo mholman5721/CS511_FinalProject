@@ -16,6 +16,7 @@
 #include <math.h>
 #include <string.h>
 #include <sys/time.h> //for gettimeofday
+#include <fstream>
 
 /*
  * define data structures
@@ -126,6 +127,14 @@ int main(int argc, char* argv[])
 	   result, n_uSecLapsedJ);
   }
 
+  FILE *f_iterations = fopen("data_file_iterations.txt", "a");
+  fprintf(f_iterations, "%d\n", result);
+  fclose(f_iterations);
+
+  FILE *f_time = fopen("data_file_time.txt", "a");
+  fprintf(f_time, "%d\n", n_uSecLapsedJ);
+  fclose(f_time);
+  
   return EXIT_SUCCESS;
 }
 
