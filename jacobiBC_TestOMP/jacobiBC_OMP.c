@@ -42,7 +42,7 @@ int JacobiBC_OMP(
 {
   int iteration = 0;
   int i, j, k;
-  double error;
+  double error[NUM_THREADS];
   boolean   done, bOverflow;
   int nModelDim, nRingLevel, nRingCnt;
   nModelDim = matrix_size-2;
@@ -107,7 +107,8 @@ int JacobiBC_OMP(
       {
 	
 	/* determine if we're done */
-	error = 0;
+	error[omp_get_thread_num()] = 0;
+	int my_rank = omp_get_thread_num();
 	
 	for (j = 0; j < ring_num;)
 	  {
@@ -131,7 +132,6 @@ int JacobiBC_OMP(
 	    }
 	   
 	    int THREAD_COUNT = omp_get_num_threads();
-	    int my_rank = omp_get_thread_num();
 	    int my_first_index, my_last_index;
 	    bool my_update = true; 
 	    // if there is more work than threads (read indices) have some threads just
@@ -161,8 +161,8 @@ int JacobiBC_OMP(
 				+ last_x[i-matrix_size] + last_x[i+matrix_size]);
 		
 		/* determine error before overwrite last_x */
-		if ( fabs(x[i] - last_x[i])/fabs(x[i]) > error )
-		  error = fabs(x[i] - last_x[i])/fabs(x[i]);
+		if ( fabs(x[i] - last_x[i])/fabs(x[i]) > error[my_rank] )
+		  error[my_rank] = fabs(x[i] - last_x[i])/fabs(x[i]);
 		
 		/* if any entry is greater than ELEMENT_MAX, consider it an overflow
 		   and abort */
@@ -176,7 +176,8 @@ int JacobiBC_OMP(
 	      }
 	    }
 	    
-	   
+	    #pragma omp barrier 
+	    
 	    //update the indices if they were a part of the work. we can't just wrap the if statement
 	    //around all the work because then the threads who may not be doing work won't get to access it and we hang
 	    if(ring_work[j] >= my_rank && my_update == true){
@@ -184,8 +185,6 @@ int JacobiBC_OMP(
 		last_x[o[m]] = x[o[m]];
 	    }
 	  
-
-	    #pragma omp barrier
        
 	    if(done == true)
 	       break;
@@ -203,7 +202,7 @@ int JacobiBC_OMP(
 	/* we are done if the iteration count exceeds the maximum number of iterations
 	   or the calculation converge */
 	if ( iteration > max_iterations
-	     || error < tolerance
+	     || error[my_rank] < tolerance
 	     || bOverflow)
 	  {
 	    done = TRUE;

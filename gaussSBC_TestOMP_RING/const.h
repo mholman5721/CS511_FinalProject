@@ -12,7 +12,7 @@
 typedef unsigned int boolean;
 #define TRUE 1
 #define FALSE 0
-#define MATRIX_DIM 100
+#define MATRIX_DIM 300
 #define NUM_THREADS 4
 
 #endif /* __CONST_H__ */

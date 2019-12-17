@@ -97,10 +97,10 @@ int main(int argc, char* argv[])
     /* initialize the random number generator */
     srand((unsigned)time(NULL));
 
-    g_myConfig.up = 10;
-    g_myConfig.down = 10;
-    g_myConfig.right = 10;
-    g_myConfig.left = 10;
+    g_myConfig.up = 100;
+    g_myConfig.down = 100;
+    g_myConfig.right = 100;
+    g_myConfig.left = 100;
 
     /* initialize matrix, set up boundary condition */
     MakeInitialMatrix(solution_vector);
@@ -178,7 +178,6 @@ void MakeInitialMatrix(double x[MATRIX_DIM+2][MATRIX_DIM+2])
     if ( MATRIX_DEBUG > 0 ) 
         printf("\nPrint matrix x[][]\n");
 
-    g_myConfig.right = 10;
     for (i=0; i<modelDimension; i++) {
         x[0][i] = g_myConfig.up;	
         x[modelDimension-1][i] = g_myConfig.down;	
