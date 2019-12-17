@@ -3,14 +3,14 @@
 CUR_DIR=`pwd`
 PY_OMP_SCRIPT=${CUR_DIR}/pythonHelperScripts/changeValsOmp.py
 PY_SCRIPT=${CUR_DIR}/pythonHelperScripts/changeVals.py
-#RUN_DIRS=("gaussSBC_TestOMP_RING" "gaussSBC_TestOMP_ITERATIVE")
-#EXECUTABLES=("testGaussSBC_OMP_RING" "testGaussSBC_OMP_ITERATIVE")
-RUN_DIRS=("gaussSBC_Test_RING" "gaussSBC_Test_ITERATIVE")
-EXECUTABLES=("testGaussSBC_Ring" "testGaussSBC_Iterative")
+RUN_DIRS=("gaussSBC_TestOMP_ITERATIVE")
+EXECUTABLES=("testGaussSBC_OMP_ITERATIVE")
+#RUN_DIRS=("gaussSBC_Test_RING" "gaussSBC_Test_ITERATIVE") "gaussSBC_TestOMP_RING" 
+#EXECUTABLES=("testGaussSBC_Ring" "testGaussSBC_Iterative") "testGaussSBC_OMP_RING" 
 
 DIMS_COUNT=10
 THREADS_COUNT=1
-MAX_THREADS=1
+MAX_THREADS=4
 MAX_DIMS=100
 
 CUR_EXECUTABLE=0
@@ -23,8 +23,8 @@ do
     do
 	  while [[ $DIMS_COUNT -le ${MAX_DIMS} ]]
 	  do
-		#python ${PY_OMP_SCRIPT} ${CUR_DIR}/${dir}/const.h ${DIMS_COUNT} ${THREADS_COUNT}
-		python ${PY_SCRIPT} ${CUR_DIR}/${dir}/const.h ${DIMS_COUNT} ${THREADS_COUNT}
+		python ${PY_OMP_SCRIPT} ${CUR_DIR}/${dir}/const.h ${DIMS_COUNT} ${THREADS_COUNT}
+		#python ${PY_SCRIPT} ${CUR_DIR}/${dir}/const.h ${DIMS_COUNT} ${THREADS_COUNT}
 
 		make clean
 		sleep 0.1
